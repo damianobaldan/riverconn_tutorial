@@ -1,0 +1,1125 @@
+﻿<html xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml" xmlns:gts="http://www.isotc211.org/2005/gts">
+  <head>
+    <META http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+					body {font-family: Verdana,sans-serif; font-size: 9pt; color: #000000; background-color: #FBFBFB; cursor: default;}
+					#header {font-size: 10pt; font-family: Arial,sans-serif; margin: 3px; text-align: center;}
+					#header .title {color: #1D786F; font-size: 15pt; font-weight: bold;}
+					#menu {text-align: center; position: relative;}
+					#md-menu {float:right; position:relative; left:-50%; font-family: Arial,sans-serif; font-size: 9pt; color: #1d786f; text-align: center; padding: 0px; margin-left: 0px; margin: 5px 0px;}
+
+					#md-menu ul {margin: 0; list-style: none outside none;  position:relative; left:50%;}
+					#md-menu li {display: block; float: left; position:relative;}
+					#md-menu li a {display: block; padding: 0px 10px; text-decoration:none; cursor: pointer; float:left; text-align:center; white-space:nowrap;}
+
+					.visibilidadNodos {cursor: pointer; float: right; font-size: 0.9em; margin: -2px 15px 0 15px; color: #1D786F;}
+					.clear {clear: both;}
+
+					.field-value { display: inline; margin-left: 5px;}
+					.field-caption { display: inline; font-style: italic; font-weight: bold; }
+					.blockTitle {cursor: pointer;}
+					.block2 .blockBody {padding-left: 15px;}
+					.block1{background-color: #B5D6D4;	color: #256861; font-size: 11pt; font-weight: bold; text-align: center; padding: 4px 2px 2px 2px ; margin: 10px;}
+					.block2{ background-color: #EFEFEF; color: #1D786F; font-size: 10pt; font-weight: bold; text-align: left; border-top: 1px solid #B5D6D4; padding: 4px 4px 4px 8px;}
+					.block2 .block2{background-color: #EFEFEF; color: #1D786F; font-size: 10pt; font-weight: bold; text-align: left; border-top: 1px solid #B5D6D4; padding: 4px 4px 4px 4px;}
+					.linea {background-color: #FFFFFF; color: #000000; font-size: 9pt; font-weight: normal; text-align: left; padding: 3px 10px;}
+
+					a {color: #1d786f; text-decoration: none;}
+				</style><script>
+					var blockBodys;
+					function lanzaLoad(){
+						var elements = myGetElementsByClassName("blockTitle");
+						for(var i=0; i < elements.length; i++){
+							elements[i].onclick=function()
+							{
+								var sig = this.nextElementSibling;
+								sig.style.display = (sig.style.display == "none" ? "block" : "none");
+							}
+						}
+						
+						blockBodys = myGetElementsByClassName("blockBody");
+						for(var i=0; i < blockBodys.length; i++){
+							if (blockBodys[i].parentNode.id != "descripcion" 
+									&& blockBodys[i].parentNode.id != "descripcionDescripcion"){
+								blockBodys[i].style.display = "none";
+							}
+						}
+						
+						var mostrar = document.getElementById("mostrar");
+						var ocultar = document.getElementById("ocultar");
+						mostrar.innerHTML = "Mostrar todo";
+						ocultar.innerHTML = "Ocultar todo";
+						ocultar.style.display = "none";
+						
+						mostrar.onclick=function(){
+							mostrar.style.display = "none";
+							ocultar.style.display = "block";
+							visibilidadBlockBody(blockBodys, "block");
+						}
+						ocultar.onclick=function(){
+							mostrar.style.display = "block";
+							ocultar.style.display = "none";
+							visibilidadBlockBody(blockBodys, "none");
+						}
+					}
+					
+					function myGetElementsByClassName(classname){
+						var a = [];
+						var re = new RegExp('(^| )'+classname+'( |$)');
+						var els = document.getElementsByTagName("*");
+						for(var i=0,j=els.length; i < j; i++){
+							if(re.test(els[i].className))a.push(els[i]);
+						}
+						return a;
+					}
+					
+					function visibilidadBlockBody(elementos, display) {
+						for(var i=0; i < elementos.length; i++){
+								elementos[i].style.display = display;
+							}
+					}
+					
+					<!--
+							function writeBase64Image(base64str){
+								var userAgent = navigator.userAgent;
+								var version = parseFloat(navigator.appVersion);
+								if ((userAgent.indexOf('MSIE') >= 0 && version >= 7.0) || 
+								  userAgent.indexOf('Firefox') >= 0 || 
+								  userAgent.indexOf('Opera') >= 0){
+									document.write('<img src="data:image;base64,' + base64str + '">');
+								}
+							}//--></script></head>
+  <body onload="lanzaLoad()">
+    <div id="header">
+      <div class="title">Red de embalses</div>
+      <div class="subtitle">ISO 19115, Catmdedit</div>
+    </div>
+    <div id="menu">
+      <div id="md-menu">
+        <ul>
+          <li><a href="#descripcion">Descripción</a></li>
+          <li><a href="#metodologia">Metodología</a></li>
+          <li><a href="#distribucion">Distribución</a></li>
+          <li><a href="#estructura">Estructura de los datos</a></li>
+          <li><a href="#refEspacial">Referencia espacial</a></li>
+          <li><a href="#refMetadatos">Referencia de metadatos</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="clear"></div>
+    <div class="visibilidadNodos">
+      <div id="mostrar"></div>
+      <div id="ocultar"></div>
+    </div>
+    <div id="descripcion" class="block1">
+      <div class="blockTitle">
+				Descripción
+			</div>
+      <div class="blockBody">
+        <div class="block2">
+          <div class="blockTitle">Mención</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Título</div>
+              <div class="field-value">Red de embalses</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Fecha de referencia</div>
+              <div class="field-value">31/7/1992</div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">Creador</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Organización</div>
+                  <div class="field-value">Oficina de Planificación Hidrológica, C.H.E.</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">Punto de contacto</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Organización</div>
+                  <div class="field-value">Confederación Hidrográfica del Ebro. Oficina de Planificación Hidrológica</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Dirección</div>
+                  <div class="field-value">Pº de Sagasta, 24-28</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Ciudad</div>
+                  <div class="field-value">Zaragoza</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Código postal</div>
+                  <div class="field-value">50071</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Provincia</div>
+                  <div class="field-value">Zaragoza</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Teléfono</div>
+                  <div class="field-value">(+34) 976 761000</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">País</div>
+                  <div class="field-value">España</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="descripcionDescripcion" class="block2">
+          <div class="blockTitle">Descripción</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Resumen</div>
+              <div class="field-value">Cobertura de embalses de la cuenca del Ebro, a escala 1:50.000. Se han considerado, además de los embalses en sentido estricto -láminas de agua artificiales- algunos casos singulares de masas de agua naturales (lagunas, ibones...) que cuentan con algún tipo de infraestructura de aprovechamiento.<br>                                                                                                                                                                                                                                                                                                      <br>                                                              Se han digitalizado, exhaustivamente, todos los embalses que aparecen representados en la Cartografía Militar de España, Serie L, escala 1:50.000, del Servicio Geográfico del Ejército, y aquéllos otros (valor "5" del item TIPO, "otros embalses") cuyo contorno se ha restituido, sobre la citada Cartografía, a partir de trabajos realizados en la Oficina de Planificación Hidrológica de la C.H.E.</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Propósito</div>
+              <div class="field-value">Se trata de una cobertura territorial de base integrada en el GIS-Ebro que pretende cartografiar la red de embalses (actuales y futuros) existente en la cuenca del Ebro.</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Información suplementaria</div>
+              <div class="field-value">Esta cobertura fue creada en 1992, en la Oficina de Planificación Hidrológica de la C.H.E. Se realizó una digitalización vectorial de coordenadas sobre la ya citada cartografía fuente (Cartografía Militar de España, Serie L, escala 1:50.000).<br>                                                                                                                                                            <br>                                                              Se ha establecido una codificación tipológica de cada uno de los embases representados, en función su consideración cronológica (item TIPO), de modo que puedan realizarse consultas/representaciones cartográficas en función del tipo de embalse.</div>
+            </div>
+          </div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">Estado</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Estado</div>
+              <div class="field-value">En desarrollo</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Frecuencia de actualización</div>
+              <div class="field-value">Irregular</div>
+            </div>
+          </div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">Otros datos</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Categorías de tema</div>
+              <div class="field-value">Aguas interiores</div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+								Palabras clave
+							</div>
+              <div class="blockBody">
+                <div class="block2">
+                  <div class="blockTitle">
+				Palabra clave 1</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Tipo</div>
+                      <div class="field-value">Tema</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Palabra clave</div>
+                      <div class="field-value">HYDROLOGY &amp; FRESHWATER RESOURCES</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Tesauro</div>
+                      <div class="field-value">CEODISCIPLINE</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">
+				Palabra clave 2</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Tipo</div>
+                      <div class="field-value">Tema</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Palabra clave</div>
+                      <div class="field-value">HIDROLOGÍA.SUPERFICIAL.INFRAESTRUCTURAS</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Tesauro</div>
+                      <div class="field-value">CHEDiscipline</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">
+				Palabra clave 3</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Tipo</div>
+                      <div class="field-value">Lugar</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Palabra clave</div>
+                      <div class="field-value">GENERIC AREA TERMS.EUROPE</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Tesauro</div>
+                      <div class="field-value">CEOLOCATION</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">
+				Palabra clave 4</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Tipo</div>
+                      <div class="field-value">Lugar</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Palabra clave</div>
+                      <div class="field-value">PLAN HIDROLÓGICO DE LA CUENCA DEL EBRO</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Tesauro</div>
+                      <div class="field-value">CHEPlace</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">
+				Palabra clave 5</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Tipo</div>
+                      <div class="field-value">Tema</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Palabra clave</div>
+                      <div class="field-value">MEDIO NATURAL, MEDIO ANTRÓPICO.ANTROPOSFERA (medio edificado, asentamientos humanos, ordenación del territorio).ordenación de tierras.área de uso mixto.embalses</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Tesauro</div>
+                      <div class="field-value">GEMET</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Restricciones</div>
+              <div class="field-value">Debe tenerse en cuenta que el presente geodataset ha sido creado con la finalidad de servir de cobertura territorial de base en los estudios, proyectos, trabajos o aplicaciones directamente relacionados con el ejercicio de las competencias y funciones propias de la Confederación Hidrográfica del Ebro, entre otras, la elaboración y revisión del Plan Hidrológico de la cuenca del Ebro, la administración y control del dominio público hidráulico y la implantación de la Directiva Marco del Agua.<br>                                                                                                                                                          <br>                                                                                                                                          La Confederación Hidrográfica del Ebro agradece a todos los usuarios de nuestras coberturas por favor se sirvan citar la fuente de procedencia de la información gráfica en sus trabajos.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="metodologia" class="block1">
+      <div class="blockTitle">
+				Metodología
+			</div>
+      <div class="blockBody">
+        <div class="block2">
+          <div class="blockTitle">Descripción</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">
+              </div>
+              <div class="field-value">La cobertura EMBALSES fue digitalizada, en una primera fase, en Arc Info 5.0 bajo UNIX, utilizando las herramientas del módulo Arcedit. Se generó topología de poligonos y se chequeó el correcto cierre de cada una de las entidades, así como la asignación de una etiqueta única.<br>                                                                                                                                                                              <br>                                                                          La fuente de información cartográfica utilizada como base en la digitalización ha sido única (Mapa General de España, Serie L, del Servicio Geográfico del Ejército), asegurándose una resolución de captura de la información fiel a escala 1:50.000<br>                                                                                                                                                                              <br>                                                                          Se asume la existencia de desajustes topológicos ("snapping") entre esta y otras coberturas del GIS-Ebro (RIOS50 y CANALES), que sería conveniente chequear y corregir.<br>                                                                                                                                                                              <br>                                                                          Los embalses codificados con valor 5 ("otros embalses" ) en el item TIPO constituyen un mero catálogo de posibles propuestas futuras de las Comunidades Autónomas, sin definición real actual.<br>                                                                                                                                                                              <br>                                                                          La cobertura ha sido convenientemente codificada a partir de un item convencional (TIPO) incluido en la tabla de atributos asociada que caracteriza a cada uno de los elementos (polígonos) del geodataset.</div>
+            </div>
+          </div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">
+						Fuentes
+					</div>
+          <div class="blockBody">
+            <div class="block2">
+              <div class="blockTitle">
+				Fuente 1</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Nombre</div>
+                  <div class="field-value">Cartografía Militar de España. Mapa General, Serie L. E. 1:50.000</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se trata de la principal fuente cartográfica utilizada en la digitalización de la mayor parte de los embalses de la cuenca del Ebro (tanto los originariamente representados en la edición oficial como los restituidos sobre esta cartografía a partir de estudios y proyectos de la O.P.H.).</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Escala</div>
+                  <div class="field-value">50000</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Fuente 2</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Empleada, única y exclusivamente, para la digitalización del perímetro del futuro recrecimiento del Embalse de Yesa (cota 521).<br>                                                                                                                      <br>                                                                                                                      (Clave del Proyecto: 09.123.126/21112)</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Escala</div>
+                  <div class="field-value">2000</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Fuente 3</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Nombre</div>
+                  <div class="field-value">Cartografía Topográfica del SIGCAR (Sistema de Información Geográfica de la Comunidad Autónoma de La Rioja</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se han utilizado 4 hojas a escala 1:5.000 como cobertura de fondo sobre la que digitalizar los embalses de Corporales y Manzanares (La Rioja). Han sido las siguientes:<br>                                                                                                                                                                                                <br>                                                                                                                      10-04 y 11-04: Embalse de Corporales<br>                                                                                                                      12-05 y 12-06: Embalse de Manzanares<br>                                                                                                                                                                                                <br>                                                                                                                      Se trata de archivos vectoriales en formato DWG y a escala 1:5.000 que forman parte de la Cartografía Topográfica del SIGC AR (Sistema de Información Geográfica de la Comunidad Autónoma de La Rioja; www.larioja.org/sig)</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Escala</div>
+                  <div class="field-value">5000</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Fuente 4</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Nombre</div>
+                  <div class="field-value">Zonas Regables Dominadas y Sectores de Riego</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Embalses procedentes de la Cartografía General a esc. 1:25.000 de la zona regable del Canal de Navarra: Un total de 48 embalses situados en el ámbito de la Comunidad Foral de Navarra y aledaños de las comunidades adyacentes (País Vasco, La Rioja y Aragón).<br>                                                                                                                      <br>                                                                                                                      Además de pequeños embalses y balsas originales, se han aprovechado algunos otros embalses (Yesa, Irabia, Urdalur...) que existían ya en la cobertura inicial pero han sido ahora reemplezados por su mejor definición/resolución de escala (1.25.000 en lugar de la original 1:50.000)</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Escala</div>
+                  <div class="field-value">25000</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Fuente 5</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Fichero DWG. Empleado, única y exclusivamente, para la incorporación del perímetro del futuro recrecimiento del Embalse de Yesa (cota 530).<br>                                                                                                                      <br>                                                                                                                      (Clave del Proyecto: 09.123.126/21112)</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Escala</div>
+                  <div class="field-value">2000</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">
+						Pasos del proceso
+					</div>
+          <div class="blockBody">
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 1</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Comienza la digitalización manual, sobre tablero, de las láminas de agua artificiales (embalses) representadas sobre la cartografía a escala 1:50.000 del Servicio Geográfico del Ejército (Serie L), y de aquellos otros ("futuros embalses considerados en el Plan Hidrológico de la cuenca del Ebro", "otros embalses") que, aunque no están originariamente cartografiados en dicha cartografía, sí habían sido trazados y delimitados (dibujados) en la colección cartografica de la Oficina de Planificación Hidrológica.</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">1/6/1992</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Organización</div>
+                      <div class="field-value">Confederación Hidrográfica del Ebro</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Persona</div>
+                      <div class="field-value">José Angel Losada</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Dirección</div>
+                      <div class="field-value">Pº de Sagasta, 24-26</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Código postal</div>
+                      <div class="field-value">50071</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Provincia</div>
+                      <div class="field-value">Aragón</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Teléfono</div>
+                      <div class="field-value">Unknown</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Email</div>
+                      <div class="field-value">jlosada@chebro.es</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 2</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Concluyen los trabajos de digitalización y edición de la cobertura; se chequean errores de digitalización y se genera topología.</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">31/7/1992</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Organización</div>
+                      <div class="field-value">Confederación Hidrográfica del Ebro</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Persona</div>
+                      <div class="field-value">José Angel Losada</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Dirección</div>
+                      <div class="field-value">Pº de Sagasta, 24-26</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Código postal</div>
+                      <div class="field-value">50071</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Provincia</div>
+                      <div class="field-value">Aragón</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Teléfono</div>
+                      <div class="field-value">Unknown</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Email</div>
+                      <div class="field-value">jlosada@chebro.es</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 3</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se digitaliza e incorpora a la cobertura originaria el contorno del Recrecimiento del Embalse de Yesa (cota 521); se utiliza para ello la cartografía incluida en el Proyecto original (09.123.126/2112), a escala original 1:2000.</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">15/6/1999</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Organización</div>
+                      <div class="field-value">Confederación Hidrográfica del Ebro</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Persona</div>
+                      <div class="field-value">José Angel Losada</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Dirección</div>
+                      <div class="field-value">Pº de Sagasta, 24-26</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Código postal</div>
+                      <div class="field-value">50071</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Provincia</div>
+                      <div class="field-value">Aragón</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Teléfono</div>
+                      <div class="field-value">Unknown</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Email</div>
+                      <div class="field-value">jlosada@chebro.es</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 4</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se añaden a la tabla .PAT (Tabla de Atributos de Polígonos) los items "REMO", "VELA" y "MOTOR", que son codificados según valores -aptitudes para la navegción- recogidos en la Resolución 11/9/2001, de Presidencia de la CHE, a efectos de navegación (BOE 254, 23/10/2001).</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">15/11/2001</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 5</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se añaden a la cobertura original un total de 48 embalses digitalizados a escala 1:25.000 cedidos por "Riegos de Navarra, S.A." en formato original DGN.<br>                                                                                                                                                                                                                                                                                                                                              Además de láminas de agua (balsas, embalses..) originales que no existían hasta la fecha en la cobertura EMBALSES, se aprovechan algunos otros embalses principales (Yesa, Irabia, Urdalur...) que, inicialmente digitalizados a escala 1:50.000, ven mejorar ahora su definición/resolución a escala 1:25.000, por lo que son reemplazados.<br>                                                                                                                                                                                                                                                                                                                                              <br>                                                                                                                                                                                                Esta fase de trabajo comporta dos procesos generales:<br>                                                                                                                                                                                                                                                                                                                                              <br>                                                                                                                                                                                                1) IGDSARC desde ArcToolbox 8.1.2: Conversión del fichero original a cobertura ArcInfo; depuración de errores y generación de topología; construcción de tabla .PAT con los mismos items/definición que tabla de la cobertura EMBALSES del GIS-Ebro. Con todo ello, se crea la cobertura temporal CNAVARRA.<br>                                                                                                                                                                                                                                                                                                                                              <br>                                                                                                                                                                                                2) Edición en ArcMap 8.1.2 y Arcedit de EMBALSES y CNAVARRA (sustitución en EMBALSES de algunos de los embalses principales contenidos en CNAVARRA, unión de ambas coberturas...)</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">30/11/2002</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 6</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se añaden a la cobertura (mediante digitalización directa sobre pantalla en ArcMap, utilizando como fondo los archivos FUENTE descritos en la sección "Source Information") los embalses de Corporales y Manzanares, situados en la Comunidad Autónoma de La Rioja.</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">12/12/2002</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 7</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se  incorpora a la cobertura originaria (a partir de un archivo DWG procedente del  Proyecto original -clave: 09.123.126/2112- a escala 1:2.000) el contorno del Recrecimiento del Embalse de Yesa (cota 530).</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">19/1/2004</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 8</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se revisa, exhaustivamente, el valor del campo "TIPO" (Tipología del embalse), especialmente para aquellos embalses codificados como tipo 2 (en construcción) y 3 (P.H.E., primer horizonte), pues en algunos casos se habían detectado importantes errores de codificación.<br>                                                                                                                                                                                                                                                                                                                                           Igualmente, se añaden dos items temáticos muy necesarios para la representación cartográfica de los embalses según tipología de propiedad: "PROP_TEXT", descripción literal del propietario del embalse y "PROP_COD", reclasificación del campo anterior en 3 únicas categorías: "Estado", "particular" y "otros OO.PP" (otros Organismos Públicos).<br>                                                                                                                                                                                                                                                                                                                                              <br>                                                                                                                                                                                                Por último, añadimos un nuevo campo "CLAVE_BD" (Clave a la Base de Datos de Embalses de la O.P.H.), que permite relacionar la tabla de la cobertura con la Base de Datos de Embalses de la O.P.H. (Access, en FEDE), en caso de que se pueda necesitar a información adicional sobre los embalses considerados en la presente cobertura (el campo clave añadido en la tabla de la Base de Datos de Embalses se denomina "CLAVE GIS").</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">11/8/2004</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 9</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se actualiza el polígono correspondiente al embalse de "El Pontet", conforme a la nota interna remitida por R. Galván. Básicamente, se trata desplazar la localización de la presa del embalse unos 600 metros, aguas abajo, desde su emplazamiento actual.<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Para los trabajos de edición, y dada la imposibilidad de trabajar directamente con coberturas (excepto si se edita desde Arc Info Workstation), se han seguido los siguientes pasos:<br>                                                                                                                                                                                                                                                                                                                                           -Conversión de la cobertura a Geodatabase<br>                                                                                                                                                                                                                                                                                                                                              -Edición de la GDB (modificación del polígono del embalse de El Pontet según se ha especificado anteriormente)<br>                                                                                                                                                                                                                                                                                                                                              -Exportación de la GDB a cobertura<br>                                                                                                                                                                                                                                                                                                                                              -Sincronización de metadatos, copia a Shapefile y Export (.e00)<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Software utilizado: ArcGIS 8.1.2</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">10/1/2005</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 10</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Digitalización de la "Presa del Regajo" (cuenca del río Linares, La Rioja, aguas arriba de Igea).<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Se ha digitalizado sobre pantalla, en Arc Info Workstation (Arcedit), a partir de cartografía 1:50.000 existente en carpeta del embalse (Archivo OPH).<br>                                                                                                                                                                                                                                                                                                                                              <br>                                                                                                                                                                                                Para su mejor ubicación/delimitación se han cargado, como capa-fuente de fondo, las correspondientes ortoimágenes del SIG Oleícola Español.<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Software utilizado: Arc Info Workstation</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">15/2/2005</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 11</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Polígonos Recrecimiento de Yesa (cotas 525 y 530 m.) pasan a tener TIPO = 6, provisionalmente, a la espera de poder gestionar esta y otras capas de SITEbro con una variable TIME que ofrezca versiones históricas: No debemos mostrar estas curvas de recrecimiento en el SITEbro (la cota finalmente acordada es la 510,5), pero tampoco nos interesa eliminarlas (proceden de cartografía de detalle a escala 1:2.000).<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Software utilizado: ArcGIS Desktop 9.2</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">17/2/2009</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 12</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Revisión y actualización de los campos "Ficha" y "COTA" según la información de embalses disponible en la página web del Ministerio de Medio Ambiente, medio rural y marino.<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Software utilizado: ArcGIS Desktop 9.2</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">14/4/2009</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Organización</div>
+                      <div class="field-value">Tragsatec</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Persona</div>
+                      <div class="field-value">Susana Fontano Ruiz</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Puesto</div>
+                      <div class="field-value">Técnico SIG</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 13</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Actualización de embalses:<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                - Actualización del embalse de Biscarrués (la anterior geometría se ha pasado a tipo 6: histórico).<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                - Inclusión de la lámina de recrecimiento de 510,5 metros del embalse de Yesa, que es de tipo 2 puesto que está en construcción.<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                - Inclusión de varios embalses y balsas de la cuenca del Matarraña: Embalse de Peñarroya, embalse de Los Comellares, Balsa de Monroyo, La Trapa y Embalse de Valcomuna.<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Software utilizado: ArcGIS Desktop 9.2</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">4/5/2009</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 14</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Creación de los campos CODIGO y NAVEGACION. El primero de ellos para crear un campo único (calculado a partir del OBJECTID), con la finalidad de poder establecer una relación con la tabla PHE_MAPAS_EMBALSES_VOLUMENES. El segundo de ellos proporciona un enlace web con información sobre la navegación de cada embalse.<br>                                                                                                                                                                                                                                                                                                                                              <br>                                                                                                                                                                                                Así mismo, se han eliminado los campos REMO, VELA y MOTOR, puesto que no ofrecen información actualizada. Esta información se conserva en el featureclass Embalses_old, del dataset de Históricos.<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Software utilizado: ArcGIS Desktop 9.2</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">7/5/2009</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 15</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Creación de los campos CODIGO y NAVEGACION. El primero de ellos para crear un campo único (calculado a partir del OBJECTID), con la finalidad de poder establecer una relación con la tabla PHE_MAPAS_EMBALSES_VOLUMENES. El segundo de ellos proporciona un enlace web con información sobre la navegación de cada embalse.<br>                                                                                                                                                                                                                                <br>                                                                                                                                                                                                Así mismo, se han eliminado los campos REMO, VELA y MOTOR, puesto que no ofrecen información actualizada. Esta información se conserva en el featureclass Embalses_old, del dataset de Históricos.<br>                                                                                                                                                                                                <br>                                                                                                                                                                                                Software utilizado: ArcGIS Desktop 9.2</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">13/8/2010</div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 16</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se actualiza la geometría del embalse de Ribarroja y el del Ebro. Los pasos seguidos son los siguientes:<br>                                                                                                      <br>                      EMBALSE DEL EBRO.<br>                                                                                                      <br>                      Se crea el contorno partiendo de la cota de máximo embalse: 839. <br>                                                                                                      <br>                      - Se utiliza el comando "Contour", de las ArcToolBox (hay que tener activada la extensión del Spatial analyst). En environments hay que decir que la extensión de trabajo sea la misma que el display, para que solo trabaje en la zona del embalse. <br>                                                                                                      <br>                      - Se limpian las lineas resultantes para que solo quede la cota 839 en la zona del embalse. Se usa también el topográfico de fondo para quedarnos con las islas que salgan en él con cota superior a 839. Se cierra una zona al sur que se extiende mucho, se corta por la presa y se cierra para posteriormente crear el polígono. <br>                                                                                                      <br>                      - Pasar de líneas a polígono. Se crea un shp nuevo, de tipo polígono, donde se dibuja un rectángulo que recoja toda la extensión del embalse. ETGeoWizards &gt; Polygon &gt; Split polygon with polyline. Y se limpia el recinto si hiciera falta. <br>                                                                                      <br>                                                                                                      <br>                      EMBALSE DE RIBARROJA<br>                                                                                                      <br>                      - Se parte de la línea de cota 71 de GEVS. Esta línea no es continua en todo el embalse, por lo tanto se completa con las siguientes: <br>                                                                                                      <br>                      .- Primero se completa con la cota 71 calculada con el comando "Contour" con el MDT 5x5. <br>                      .- Después, se mejora con la cota 71 calculada con el comando "Contour" con el MDT del SNCZI. Este MDT no está disponible para toda la zona del embalse. <br>                      .- Se revisa toda la zona del MDT 5x5 con la ortofoto del PNOA, donde se ve que hay agua que no queda dentro del embalse, se perfila la línea. <br>                                                                                                      <br>                      Con la capa de líneas ya preparada, se pasa a polígono con los pasos descritos para el embalses del Ebro. <br>                                                                                                      <br>                                                                                                      <br>                      Software utilizado ArcGIS 10.0</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">21/5/2015</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Organización</div>
+                      <div class="field-value">Tragsatec</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 17</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se actualiza toda la capa con respecto al Plan Hidrológico 2015-2021 (obras hidráulicas contempladas en el segundo ciclo del PHE 2015-2021).<br>                                                                      <br>                                                                      La codificación del campo TIPO continua siendo la misma:<br>                                                                      <br>                                                                      TIPO = 1. Embalses actuales<br>                                                                      TIPO = 2. Embalses en construcción<br>                                                                      TIPO = 3. Embalses en estudio<br>                                                                      <br>                                                                      Para recoger todos los cambios producidos con motivo de la representación de obras hidráulicas consideradas en el 2º ciclo del PHE ha sido necesaria la incorporación de nuevos embalses:<br>                                                                      <br>                                                                      - REDECILLA DEL CAMPO<br>                                                                      - Balsas de RAMBLA CALDÉS, RAMBLA DE LAS TRUCHAS y BALSA RÍO CANTAVIEJA<br>                                                                      - Recrecimiento de MARGALEF<br>                                                                      - PEÑA CERVERA<br>                                                                      - Contrapresa de MONEVA<br>                                                                      <br>                                                                      Software utilizado: ArcGIS 10.0.</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">22/6/2017</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Organización</div>
+                      <div class="field-value">Confederación Hidrográfica del Ebro. Oficina de Planificación Hidrológica</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Persona</div>
+                      <div class="field-value">José Angel Losada García</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Puesto</div>
+                      <div class="field-value">Técnico Superior</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Dirección</div>
+                      <div class="field-value">Pº de Sagasta, 24-28</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Ciudad</div>
+                      <div class="field-value">Zaragoza</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Código postal</div>
+                      <div class="field-value">50071</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Teléfono</div>
+                      <div class="field-value">+34_976_761_000</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Email</div>
+                      <div class="field-value">jlosada@chebro.es</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">País</div>
+                      <div class="field-value">España</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 18</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se actualiza la delimitación del embalse de Santolea, y su zona de recrecimiento.<br>                                                      <br>                                                      El trabajo de la delimitación lo realizó la empresa Cygsa, para lo cual realizó un vuelo aéreo a fecha 7/12/2011 con el fin de completar la cartografía existente de la zona, que procedía de otro vuelo realizado para la redacción del proyecto original del año 1998. Posteriormente se realizó una restitución y obtención de las cotas 584 (correspondiente al embalse actual), y 596 (correspondiente al recrecimiento).<br>                                                      <br>                                                      Los datos fueron generados en formato CAD (dwg), y fueron convertidos y tratados en shp con el software ArcGIS 10.2.<br>                                                      <br>                                                      </div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">6/11/2017</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Organización</div>
+                      <div class="field-value">Confederación Hidrográfica del Ebro. Oficina de Planificación Hidrológica</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Persona</div>
+                      <div class="field-value">José Angel Losada García</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Puesto</div>
+                      <div class="field-value">Técnico Superior</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Dirección</div>
+                      <div class="field-value">Pº de Sagasta, 24-28</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Ciudad</div>
+                      <div class="field-value">Zaragoza</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Código postal</div>
+                      <div class="field-value">50071</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Teléfono</div>
+                      <div class="field-value">+34_976_761_000</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">Email</div>
+                      <div class="field-value">jlosada@chebro.es</div>
+                    </div>
+                    <div class="linea">
+                      <div class="field-caption">País</div>
+                      <div class="field-value">España</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+				Paso del proceso 19</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Se actualiza la delimitación del embalse de La Sotonera, tomando como fuente la delimitación de la Red Hidrográfica Básica (IGR-Hidrografía) a escala 1:25.000 del IGN.<br>      <br>      Software utilizado: ArcGIS 10.4</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Fecha</div>
+                  <div class="field-value">16/1/2020</div>
+                </div>
+                <div class="block2">
+                  <div class="blockTitle">Procesador</div>
+                  <div class="blockBody">
+                    <div class="linea">
+                      <div class="field-caption">Persona</div>
+                      <div class="field-value">Tragsatec</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="distribucion" class="block1">
+      <div class="blockTitle">
+				Distribución
+			</div>
+      <div class="blockBody">
+        <div class="block2">
+          <div class="blockTitle">Formato</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Formato</div>
+              <div class="field-value">SHP</div>
+            </div>
+          </div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">Distribuidor</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Organización</div>
+              <div class="field-value">Confederación Hidrográfica del Ebro. Oficina de Planificación Hidrológica</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Persona</div>
+              <div class="field-value">José Ángel Losada García</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Puesto</div>
+              <div class="field-value">Técnico Superior</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Dirección</div>
+              <div class="field-value">Pº de Sagasta, 24-28</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Ciudad</div>
+              <div class="field-value">Zaragoza</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Código postal</div>
+              <div class="field-value">50071</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Provincia</div>
+              <div class="field-value">Zaragoza</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Teléfono</div>
+              <div class="field-value">(+34) 976 761000</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Email</div>
+              <div class="field-value">jlosada@chebro.es</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Url</div>
+              <div class="field-value">http://www.chebro.es/</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">País</div>
+              <div class="field-value">España</div>
+            </div>
+          </div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">
+				Opciones de transferencia
+			</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Unidades de distribución</div>
+              <div class="field-value">Capas descargables comprimidas en formato .zip.</div>
+            </div>
+            <div class="block2">
+              <div class="blockTitle">
+						Fuentes en línea
+					</div>
+              <div class="blockBody">
+                <div class="linea">
+                  <div class="field-caption">Enlace</div>
+                  <div class="field-value">http://iber.chebro.es/geoportal/index.htm</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Nombre</div>
+                  <div class="field-value">Geoportal SITEBRO</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Descripción</div>
+                  <div class="field-value">Catálogo de servicios y de aplicaciones con contenido geográfico de la Confederación Hidrográfica del Ebro.</div>
+                </div>
+                <div class="linea">
+                  <div class="field-caption">Función</div>
+                  <div class="field-value">Descarga</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="estructura" class="block1">
+      <div class="blockTitle">
+				Estructura de los datos
+			</div>
+      <div class="blockBody">
+        <div class="linea">
+          <div class="field-caption">
+          </div>
+          <div class="field-value">- PROP_COD: Propietario del embalse (reclasificado) según la Oficina de Planificación Hidrológica (C.H.E.)<br>                          - CLAVE_BD: Campo clave para relación con Base de Datos de Embalses de la C.H.E. según la Oficina de Planificación Hidrológica (C.H.E.)<br>                          - TIPO: Tipología del embalse según la Oficina de Planificación Hidrológica (C.H.E.). TIPO = 1. Embalses actuales; TIPO = 2. Embalses en construcción; TIPO = 3. Embalses en estudio<br>                          - NOMBRE: Nombre del Embalse según la Oficina de Planificación Hidrológica (C.H.E.)<br>                          - CAPACIDAD: Capacidad del embalse (hm3) según la Oficina de Planificación Hidrológica (C.H.E.)<br>                          - FUENTE: Fuente de la información geográfica según la Oficina de Planificación Hidrológica (C.H.E.)<br>                          - OBSERVA: Observaciones varias según la Oficina de Planificación Hidrológica (C.H.E.)<br>                          - PROP_TEXT: Propietario del embalse (literal) según la Oficina de Planificación Hidrológica (C.H.E.)<br>                          - PHE10_15: Incluido o no en el Plan de 2010-2015 según la Oficina de Planificación Hidrológica (C.H.E.)</div>
+        </div>
+      </div>
+    </div>
+    <div id="refEspacial" class="block1">
+      <div class="blockTitle">
+				Referencia espacial
+			</div>
+      <div class="blockBody">
+        <div class="linea">
+          <div class="field-caption">Sistema de coordenadas</div>
+          <div class="field-value">EPSG:25830</div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">
+				Coordenadas límite (absolutas)
+			</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Longitud Oeste</div>
+              <div class="field-value">-4.252754</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Longitud Este</div>
+              <div class="field-value">1.948707</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Latitud Norte</div>
+              <div class="field-value">43.122397</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Latitud Sur</div>
+              <div class="field-value">40.605322</div>
+            </div>
+          </div>
+        </div>
+        <div class="linea">
+          <div class="field-caption">Resolución espacial</div>
+          <div class="field-value">1:50000</div>
+        </div>
+      </div>
+    </div>
+    <div id="refMetadatos" class="block1">
+      <div class="blockTitle">
+				Referencia metadatos
+			</div>
+      <div class="blockBody">
+        <div class="linea">
+          <div class="field-caption">Nombre del estándar</div>
+          <div class="field-value">ISO 19115 Geographic Information - Metadata</div>
+        </div>
+        <div class="linea">
+          <div class="field-caption">Versión del estándar</div>
+          <div class="field-value">http://metadata.dgiwg.org/ISO19115/ISO19115_v0_7.htm</div>
+        </div>
+        <div class="linea">
+          <div class="field-caption">Fecha de los metadatos</div>
+          <div class="field-value">10/1/2005</div>
+        </div>
+        <div class="block2">
+          <div class="blockTitle">Punto de contacto</div>
+          <div class="blockBody">
+            <div class="linea">
+              <div class="field-caption">Organización</div>
+              <div class="field-value">Confederación Hidrográfica del Ebro. Oficina de Planificación Hidrológica</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Persona</div>
+              <div class="field-value">José Ángel Losada García</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Puesto</div>
+              <div class="field-value">Técnico Superior</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Dirección</div>
+              <div class="field-value">Pº de Sagasta, 24-28</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Ciudad</div>
+              <div class="field-value">Zaragoza</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Código postal</div>
+              <div class="field-value">50071</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Provincia</div>
+              <div class="field-value">Zaragoza</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Teléfono</div>
+              <div class="field-value">(+34) 976 761000</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">Email</div>
+              <div class="field-value">jlosada@chebro.es</div>
+            </div>
+            <div class="linea">
+              <div class="field-caption">País</div>
+              <div class="field-value">España</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              

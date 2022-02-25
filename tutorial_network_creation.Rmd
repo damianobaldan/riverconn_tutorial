@@ -1,0 +1,632 @@
+---
+title: "Tutorial to create `igraph` objects from spatial data and calculate fragmentation indices with `riverconn`"
+author: 
+  - "Damiano Baldan"
+  - "David Cunillera-Moncusi"
+date: "`r Sys.Date()`"
+output: rmdformats::downcute
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Introduction
+
+This document is a step-by-step guide to create an `igraph` object starting from commonly available geodata. Here, an example is provided using data for the Ebro river (Spain), based on widely available geodata from HydroSHEDS and public repositories from the Hydrographic Confederation of the Ebro river [`CHE`](http://iber.chebro.es/geoportal/).
+
+After this tutorial is completed, the resulting  `igraph` object is meant to be used as input to functions to assess riverscape fragmentation. The [`riverconn`](https://github.com/damianobaldan/riverconn) R package allows implements a lot of such indices.  Most graph theory-based indices to asses fragmentation (see Jumani et al., 2020 for a review) conceptualize the riverscape as a graph where vertices (nodes) represent reaches, i.e. distintictly separated river sections; while edges (links) represent splitting objects, such as confluences (where two reaches join), barriers (items that disrupt the longitudial connectivity of the river), or habitat patches boundaries (borders between sections of the river with relatively uniform habitat conditions). This tutorial focuses on barriers (dams), but in principle other fragmentation inputs can be dealt with similarly.
+
+The [`igraph`](https://cran.r-project.org/web/packages/igraph/index.html) package implements routines for graphs and network analysis. It can handle large graphs very well and provides functions for generating random and regular graphs, graph visualization, centrality methods and much more. The packages allows for easy [construction](https://igraph.org/r/doc/aaa-igraph-package.html) of `igraph` objects based on symbolic description of edges and vertices, edges and vertices lists, or adjacency matrices. The book [Statistical Analysis of Network Data with R by Kolaczyk and Csardi (2014)](https://link.springer.com/book/10.1007%2F978-3-030-44129-6) offers a comprehensive tutorial on the possibilities offered by the `igraph` package, including network data manipulation and visualization, descriptive analysis of network graphs, mathematical and statistical modeling of graphs, and network topology inference.
+
+## 1.1 Packages needed
+
+This guide relies on several packages for data processing (the links point to useful resources and tutorials):
+
+* `sf`, `lwgeom`, `rgdal`, `raster`, `elevatr`, `RANN` packages for obtaining and processing spatial data;
+* [`igraph`](https://igraph.org/) package for performing network analyses;
+* [`tidyverse`](https://www.tidyverse.org/) packages for efficient and easy-to-read data pipeline (see [here](https://dplyr.tidyverse.org/) and [here](https://tidyr.tidyverse.org/) for the most frequently used functions);
+* [`ggnetwork`](https://briatte.github.io/ggnetwork/articles/ggnetwork.html) for producing easy, ggplot-like, plot of class `igraph` objects and [`ggspatial`](https://r-spatial.org/r/2018/10/25/ggplot2-sf.html) for easy, ggplot-like plot, of spatial data;
+* [`corrmorant`](https://github.com/r-link/corrmorant) to plot nice correlation plots;  
+* `riverconn` to calculate the fragmentation indices for the riverscape.
+
+Make sure those libraries are installed, updated, and loaded.
+
+```{r packages, results='hide', message=FALSE, warning=FALSE} 
+library(tidyverse)
+library(sf)
+library(raster)
+library(ggspatial)
+library(viridis)
+library(igraph)
+library(riverconn)
+library(elevatr)
+library(gridExtra)
+library(ggnetwork)
+library(lwgeom)
+library(gridExtra)
+library(corrmorant)
+library(RANN)
+```
+
+Most of the geospatial processing in this tutorial occurs on `sf` objects. Thanks to their data.frame-like structure, spatial operations (e.g., selecting and updating columns and rows, join with other data frames) are "easier" on such objects. Most spatial objects are converted to this class as soon as possible in the script.
+
+## 1.2 Workflow steps
+
+The workflow suggested in this document follows several steps:
+
+* data retrieval from existing datasets;  
+* data pre-processing;  
+* network creation;  
+* indices calculation and comparison.  
+
+## 1.3 Sources of the spatial data
+
+The construction of the `igraph` object requires at least some information on the spatial geometry of the river system and the position of the barriers. 
+
+The river network shapefile can be retrieved from [HydroSHEDS](https://www.hydrosheds.org/page/overview), a global river network geo-referenced dataset derived from spaceborn elevation data. HydroSHEDS is widely used for global to regional analyses (Lehner et al., 2008). Data can be downloaded from [here](https://www.hydrosheds.org/downloads). River networks shapefiles (HydroRIVERS) are available at two different resolutions (15 and 30 sec). Basins and catchments shapefiles (HydroBASINS) are also available with 12 detail levels (Lehner et al., 2013). The Ebro catchment border can be selected from the polygons available in the HydroBASINS layer and the corresponding network can be extracted from the HydroSHEDS layer.
+
+The shapefile with the geographic position of the dams was obtained from the Ebro river public Geographic Information System [CHE website](http://iber.chebro.es/geoportal/). 
+
+The obtained files can be imported in R (note that the river shapefile "Ebre_riv_modif.shp" has been sligtly modified from the original hydrosheds shapefile -see next sections on the checks carried out on the shapefiles. The original shapefile is saved in the Ebro_shape/ folder for comparison). 
+```{r read shapes , message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+shape_river<- st_read("Ebre_shape/Ebre_riv_modif.shp")
+shape_basin <- st_read("Ebre_catchment/Ebro_catchment.shp")
+shape_dams <- st_read("Ebre_Dams/Embalses/Embalses.shp")
+```
+
+## 1.4 Functions to support data processing
+
+Some custom functions were developed and were used in the data processing. The source code and the documentation for these functions is found in Appendix B. Before starting, make sure those functions are loaded in the global environment: `get_outlet`, `create_network`, `snap_to_river`, `headwaters_dam`, `multiple_confluences`.
+
+```{r source processing funs ,echo = FALSE}
+source("functions_network_creation.R")
+```
+
+# 2. Data pre-processing
+
+Some data preprocessing is needed to prepare the input data for network construction.
+
+## 2.1 Shapefiles processing
+
+Shapefiles derived from the HydroRIVER layer have a high detail level: a network with a high detail level will have a large amount of nodes and links, making the algorithms for network analysis slow. Thus it makes sense to reduce the size of the network by pruning the most upstream reaches. The information on the upstream area (number of DEM raster cells) is stored in the field 'UP_AREA'. Knowing the HydroSHEDS resolution (data used here have a resoluton of 15 seconds, corresponding to 450 meters at this latitude), a threshold on upstream area can be decided.
+```{r prune HydroRIVERS network based on upstream area, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Set threshold
+threshold = 500
+
+# Prune HydroRIVERS network
+shape_river_small <- shape_river[as.numeric(shape_river$UP_CELLS) > threshold,]
+```
+
+Next, the dams shapefile can be converted to a shapefile and a unique id can be given to each point. As Dams dataset is a "polygon" shapefile we calculate the centroid of each poligon to obtain a "point" layer. The reference system of the dams layer is changed to WGS84, the same reference system of HydroSHEDS.
+```{r dams to points, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+dams_to_points <- shape_dams %>%
+  st_as_sf %>%
+  st_centroid %>%
+  mutate(id = 1:nrow(.))%>% 
+  dplyr::select(id)%>% 
+  st_transform(crs = "+proj=longlat +datum=WGS84")
+```
+
+The shapefies can be plot to check there are no errors in the geolocalization of the data.
+```{r plot HydroRIVERS and ICPDR network, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+ggplot() +
+  coord_fixed() +
+  theme_minimal() +
+  ggspatial::layer_spatial(shape_basin, fill = NA, color = "gray90") +
+  ggspatial::layer_spatial(shape_river_small, aes(color = log10(as.numeric(UP_CELLS * 0.45 * 0.45))))+
+  ggspatial::layer_spatial(dams_to_points) +
+  scale_color_viridis(direction = -1, name= "upstream area \n(log10[Km^2])") +
+  theme(legend.position = "bottom") +
+  ggspatial::annotation_scale(location = "bl", style = "ticks") +
+  ggspatial::annotation_north_arrow(location = "br")+
+  labs(caption = "Black dots are the position of the dams")
+```
+
+## 2.2 Confluences processing
+
+Every river network contains confluences, i.e. points where two reaches merge into one. In the river graph defined above, confluences are edges (links) between nodes. To define confluences the pruned river shapefile is first simplified and its geometry is casted to "POINT".
+```{r simplify cast river network, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Simplify river shapefile
+shape_river_simple <- shape_river_small %>%
+  st_as_sf %>%
+  st_union()
+
+# Convert shapefile to point object
+river_to_points <- shape_river_simple %>%
+  st_as_sf %>%
+  st_cast("POINT") %>%
+  mutate(id = 1:nrow(.))
+```
+
+Since points are created at the extremes of every segment in the original shapefile, a confluence is delineated where three (or more) of such nodes are overlapping.
+```{r nodes identification, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Check points that overlap
+joins_selection <- river_to_points %>%
+  st_equals() %>%
+  Filter(function(x){length(x) > 2}, .) %>%
+  lapply(., FUN = min) %>%
+  unlist() %>%
+  unique()
+
+# Filter original point shapefile to retain only confluences
+river_joins <- river_to_points %>% 
+  filter(id %in% joins_selection)
+```
+
+The last step -this step is needed later- is the splitting of the simplified shapefile where it intersects a confluence. This allows to identify unequivocally the river sections that are comprised between two confluences. Such elements will then became vertices of the graph. The function `st_split` from the `lwgeom` package is used. This function splits an object of class 'sf' with 'MULTILINESTRING' geometry into and object of class 'sf' containing multiple 'LINESTRING' geometries records based on the position of the points. Note that for this function to work properly, the point object must perfectly overlap with the polyline (this can be checked with the function `sf::st_distance` applied to the points and the polyline, which must return a vector of zeroes).
+```{r split confluences polyline, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Split polyline
+shape_river_simplified <- lwgeom::st_split(shape_river_simple, river_joins) %>%
+  st_collection_extract(.,"LINESTRING") %>%
+  data.frame(id = 1:length(.), geometry = .) %>%
+  st_as_sf() %>%
+  mutate(length = st_length(.))
+```
+
+Results can be checked with a plot.
+```{r plot confluences, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+ggplot() +
+  coord_fixed() +
+  ggspatial::layer_spatial(shape_river_simplified, aes(color = id))+
+  scale_color_viridis(direction = -1, name= "reach Id") +
+  ggspatial::layer_spatial(river_joins, shape = 1)+
+  theme_minimal() +
+  theme(legend.position = "bottom")+
+  ggspatial::annotation_scale(location = "bl", style = "ticks") +
+  ggspatial::annotation_north_arrow(location = "br")+
+  labs(caption = "Hollow points are the position of the junctions")
+```
+
+Sometimes, the HydroSHEDS-derived shapefiles might have confluences where four or more rivers join. Such type of confluences can cause problems in the next steps. The function `multiple_confluences` (Appendix B) identifies such problematic confluences so that they can be corrected in a GIS environment. The correction should consists in editing the river shapefile to move re-locate one of the reaches (either upstream or downstream) on the intersections that have more than three reaches (this can be easily attained once these intersections are located by the following function). Once edited, re-run the script and check again that there are no more four reaches confluences.   
+```{r check multiple confluences, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+multiple_confluences(shape_river_simple)
+```
+
+## 2.3 Dams processing
+Dams are processed in a way similar to confluences. The general idea is to obtain a shapefile that is sliced in points where dams or confluences are located. However, dams shapefiles require special care in the processing of the data. First, dams need to be snapped to the river network. Second, dams that are too far away from the river network need to be removed from the analysis because they are probably located in smaller streams that were removed beforehand.
+
+The function `snap_to_river` (see Appendix B) is used to snap the dams points to the river network based on a tolerance threshold (here, 1000 m were used). After this function, the distance of snapped dams can be checked to make sure the algorithm worked properly.
+```{r snap dams, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Snap dams
+dams_snapped <- snap_to_river(dams_to_points,
+                              shape_river_simple %>% st_sf(),
+                              max_dist = 1000)
+# Retain dams that were snapped
+dams_snapped_reduced <-
+  dams_snapped[st_contains(shape_river_simple %>% st_sf(), dams_snapped, prepared = FALSE)[[1]],]
+
+# Check if dams were snapped properly to the network (all the distances should be zero)
+st_distance(dams_snapped_reduced, shape_river_simple) %>% sum
+```
+
+The final step is to check if two dams were snapped in the same geographic point, and to assign passablity values to the obtained snapped points. Here, uniform (not dam-dependent) passabilities were assigned: 0.8 for downstream passability, and 0.1 for upstream passability. An id is assigned to each of the geographic points.
+```{r create dams points passability, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+dams_snapped_reduced_joined <- dams_snapped_reduced %>%
+  mutate(cluster =
+           st_equals(dams_snapped_reduced, dams_snapped_reduced) %>%
+           sapply(., FUN = function(x) paste0(x, collapse = "_"))) %>%
+  group_by(cluster) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(id_dam = as.character(1:nrow(.)), pass_u = 0.1, pass_d = 0.8) %>%
+  as.data.frame %>%
+  st_as_sf()
+```
+
+The function `headwaters_dam` (see Appendix B) can identify dams that are located in the headwaters, meaning that they do not have any river network segment upstream. When no upstream segment is present, the network can not be created (because the dam would be an edge without an upstream vertex). By calling the flag_headwater you should get a column with only "FALSE" statements. 
+```{r headwaters dams check, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+headwaters_checking <- headwaters_dam(dams_snapped_reduced_joined, shape_river_simple)
+head(headwaters_checking$flag_headwater)
+```
+
+Results can be checked with a plot.
+```{r plot dams, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+ggplot() +
+  coord_fixed() +
+  ggspatial::layer_spatial(shape_river_simple, color = "gray70")+
+  ggspatial::layer_spatial(dams_snapped_reduced, shape = 1) +
+  theme_minimal() +
+  theme(legend.position = "bottom")+
+  ggspatial::annotation_north_arrow(location = "br")+
+  ggspatial::annotation_scale(location = "bl", style = "ticks") +
+  labs(caption = "Hollow points are the position of the dams")
+```
+
+## 2.4 Shapefile slicing
+The last step is to slice the river shapefile based on both the position of dams and confluences. First a combined 'junctions' dataset is created, then the function `lwgeom::st_split` is applied again. note that the confluences are assigned NA values to the fields present in the dams shapefile. Note also that in the river network shapefile, the field length is calculated.
+```{r join dams confluences shapefiles, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Create junction point shapefile
+network_links <- rbind(
+  dams_snapped_reduced_joined %>% 
+    mutate(type = "dam", id_barrier = id_dam) %>%
+    dplyr::select(type, id_barrier, pass_u, pass_d),
+  river_joins %>% mutate(type = "joint") %>%
+    dplyr::select(type) %>%
+    mutate(id_barrier = NA, pass_u = NA, pass_d = NA) %>%
+    rename(geometry = x)) %>%
+  mutate(id_links = 1:nrow(.))
+
+# Split river network
+river_net_simplified <- lwgeom::st_split(shape_river_simple, network_links) %>%
+  st_collection_extract(.,"LINESTRING") %>%
+  data.frame(EdgeID = 1:length(.), geometry = .) %>%
+  st_as_sf() %>%
+  mutate(length = st_length(.))
+```
+
+A plot can reveal if the process was succesful
+```{r plot dams joins, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+ggplot() +
+  coord_fixed() +
+  ggspatial::layer_spatial(river_net_simplified, color = "gray70")+
+  ggspatial::layer_spatial(network_links, aes(shape = type))+
+  scale_shape_manual(name = "Splitting points", values=c("dam" =17,"joint" = 23))+
+  theme_minimal() +
+  theme(legend.position = "bottom")+
+  ggspatial::annotation_north_arrow(location = "br")+
+  ggspatial::annotation_scale(location = "bl", style = "ticks")
+```
+
+## 2.5 Adding additional attributes to the river shapefile
+Additional attributes useful for the network calculation can be added to the river shapefile. Elevation is an example. Here we use the function `elevatr::get_elev_raster` to get the elevation raster. Then, the raster is converted to data frame, and elevation is joined with the shapefile based on the nearest point. This procedure is approximated, but is fine for most of the large-scale analyses.
+```{r get process DEM, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# get DEM and transform to data frame with coordinates
+elevation <- get_elev_raster(shape_basin, z = 8)
+catchment_DEM <- raster::as.data.frame(elevation, xy = TRUE)
+
+# Get coordinates of the river network segments
+river_net_simplified_centroids <- river_net_simplified %>%
+  st_as_sf() %>%
+  st_centroid()
+
+# Get coordinates of both elements for joining
+Coord_Edges <- st_coordinates(river_net_simplified_centroids) #Coordinates of the joins
+Coord_DEM <- catchment_DEM[,1:2] #Coordinates of the dams
+
+# Matching each centroid with its closer altittude point to later obtain the altitudes
+matching_altitudes <- RANN::nn2(data=Coord_DEM, query = Coord_Edges, k=1, radius = 1)[[1]] 
+
+# Get values and add to the river shapefile
+catchment_DEM <- catchment_DEM[matching_altitudes,3]
+river_net_simplified <- river_net_simplified %>% 
+  mutate(alt = catchment_DEM)
+```
+
+Plotting can show weird behaviors of the join operation.
+```{r plot DEM, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+ggplot() +
+  coord_fixed() +
+  ggspatial::layer_spatial(river_net_simplified, aes(color = alt))+
+  scale_color_viridis(name = "Elevation")+
+  theme_minimal() +
+  theme(legend.position = "bottom")+
+  ggspatial::annotation_north_arrow(location = "br")+
+  ggspatial::annotation_scale(location = "bl", style = "ticks")
+```
+
+# 3. Creation of the `igraph` object
+The `igraph` object can be created using the functions `get_outlet` and `create_network` (see Appendix B). The function `get_outlet` identifies the outlet of the catchment based on the intersection between the river network shapefile and the catchment border. This function is meant to be used with hydroSHEDS-derived data, but the identification can be done manually on any GIS software. The function `create_network` uses the outlet information, the properly sliced river network shapefile and the junctions shapefile. Note that for using this function the fields with barriers informations must be named 'id_barrier', 'pass_u' and 'pass_d'.
+```{r create igraph object, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+outlet <- get_outlet(river_net_simplified, shape_basin, distance = 1)
+outlet
+
+river_graph <- create_network(network_links, river_net_simplified, outlet)
+```
+
+`river_graph` is an object of class `igraph`  that keeps the attributes present in the shapefile and in the junction.
+```{r igraph diagnostics, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Check igraph object
+river_graph
+
+# check river_graph edges
+igraph::get.edge.attribute(river_graph) %>% names
+
+# check river_graph vertices
+igraph::get.vertex.attribute(river_graph) %>% names
+```
+
+## 3.1 Editing the `igraph` object
+The edges and verices attributes can be further edited. For instance, the 'length' vertices attributes is expressed in meters. The value is changed to tens of kilometers for the following calculations.
+```{r length attribute update, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# update length attribute
+V(river_graph)$length <- V(river_graph)$length / 10000
+hist(V(river_graph)$length)
+```
+
+Another step is to add some fields with habitat suitability information. Two different habitat curves are implemented to link elevation and habitat preference, one for high-altitude organisms and one for low-altitude organisms. Relative reach-specific habitat suitability indices (HSI) are added as attributes of the vertices. Weighted usable length (WUL) is also calculated as the product of length and HSI as the reach-specific fraction of length that is available for organisms.
+```{r habitat suitability, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+
+# Function for organism that prefers high elevation
+suit_fun_high <- function(x){dnorm(x, mean = 1500, sd = 500)*410*sqrt(3*pi)}
+
+# Function for organism that prefers low elevation
+suit_fun_low <- function(x){exp(- 0.001*x)}
+
+# Calculate HSI for the igraph nodes
+V(river_graph)$HSI_low <- suit_fun_low(V(river_graph)$alt)
+V(river_graph)$HSI_high <- suit_fun_high(V(river_graph)$alt)
+
+# Calculate weighted usable length for igraph nodes
+V(river_graph)$WUL_low <- V(river_graph)$HSI_low * V(river_graph)$length
+V(river_graph)$WUL_high <- V(river_graph)$HSI_high * V(river_graph)$length
+
+# Plot the two response functions
+1:10:2500 %>%
+  data.frame("Elevation" = .,
+             "Low" = suit_fun_low(.), 
+             "High" = suit_fun_high(.)) %>%
+  pivot_longer(c("Low", "High"), 
+               names_to = "Type", values_to = "HSI") %>%
+  ggplot() + 
+  geom_line(aes(x = Elevation, y = HSI, color = Type))+
+  theme_bw()
+
+
+```
+
+## 3.2 Plotting the `igraph` object
+The `ggnetwork` package can be used to fortify `igraph` objects for ggplot-friendly plots. For a nice network layout that resembles the geometry of the starting network, the centroids of the reaches are extracted. The habitat suitabilities are plotted.
+```{r plot habitat suitability, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Extract reaches centroids
+river_net_simplified_centroids <- river_net_simplified %>%
+  st_as_sf() %>%
+  st_centroid() 
+
+# get the centroids coordinates
+coordinates <- river_net_simplified_centroids %>%
+  dplyr::mutate(lat = sf::st_coordinates(.)[,1], lon = sf::st_coordinates(.)[,2]) %>%
+  dplyr::select(lat, lon) %>%
+  st_set_geometry( NULL)
+
+# fortify the igraph object
+gg0 <- ggnetwork(river_graph, layout = coordinates %>% as.matrix(), scale = FALSE)
+
+grid.arrange(
+ggplot(gg0, aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_fixed() +
+  geom_nodes(aes(color = HSI_high)) +
+  geom_edges(alpha = 0.5) +
+  scale_color_viridis()+
+  theme_blank()+
+  ggtitle("High-altitude organism") +
+  labs(caption = "Network directionality not shown"), 
+
+ggplot(gg0, aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_fixed() +
+  geom_nodes(aes(color = WUL_high)) +
+  geom_edges(alpha = 0.5) +
+  scale_color_viridis()+
+  theme_blank()+
+  ggtitle("High-altitude organism") +
+  labs(caption = "Network directionality not shown"), 
+
+ggplot(gg0, aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_fixed() +
+  geom_nodes(aes(color = HSI_low)) +
+  geom_edges(alpha = 0.5) +
+  scale_color_viridis()+
+  theme_blank()+
+  ggtitle("Low-altitude organism") +
+  labs(caption = "Network directionality not shown"),
+
+ggplot(gg0, aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_fixed() +
+  geom_nodes(aes(color = WUL_low)) +
+  geom_edges(alpha = 0.5) +
+  scale_color_viridis()+
+  theme_blank()+
+  ggtitle("Low-altitude organism") +
+  labs(caption = "Network directionality not shown"),
+  ncol=2, nrow=2)
+
+```
+
+# 4. Calculation of the indices
+Here some example of indices for riverscape connectivity applied to river graphs are presented.
+
+## 4.1 Dams removal prioritization
+The function `d_index_calculation` from the `riverconn` package is used to identify dams whose passability improvement can best benefit the catchment connectivity. Check the package vignette for details on the indices used to this end. Here we use different setups based on the habitat and the dispersal mode to check weather the prioritization changes.
+
+First dams metadata are to be defined. The object is saved as a dataframe that stores the id of the dams to be individually tested in a column, and the relative improvements in upstream and downstream passabilies (here improvement is assumed to be uniformly 1).
+```{r dams metadata, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+barriers_metadata <- data.frame("id_barrier" =  E(river_graph)$id_barrier[!is.na(E(river_graph)$id_barrier)],
+                            "pass_u_updated" = 1,
+                            "pass_d_updated" = 1)
+head(barriers_metadata)
+```
+
+Next, the dams prioritization can be executed. The calculation may take a while depending on the computer where it is run. There is the option to parallelize the process (marking -> parallel=TRUE and the number of cores devoted -> ncores= ). It takes 4 minutes with parallel=FALSE for this example in a computer with this procesor: 11th Gen Intel Core i7, 3.30 GHz and 32 GbRAM. On the other hand it takes 1.5 minutes when parallelizing with 7 cores (parallel = TRUE,ncores = 7). To parallelize `doParallel` package is required.       
+
+```{r d index calculation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Initialize list where to store all the index calculation outputs
+d_i <- list()
+lab_i <- list()
+letter_i <- list()
+
+# 1: symmetric dendritic connectivity index (no biotic effects)
+lab_i[[1]] <- "Structural symmetric"
+letter_i[[1]] <- "A"
+d_i[[1]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata,
+                                B_ij_flag = FALSE, 
+                                parallel = FALSE)
+
+# 2: asymmetric dendritic connectivity index (no biotic effects)
+lab_i[[2]] <- "Structural asymmetric"
+letter_i[[2]] <- "B"
+d_i[[2]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata, 
+                                B_ij_flag = FALSE, 
+                                parallel = FALSE, 
+                                dir_fragmentation_type = "asymmetric")
+
+# 3: population connectivity index with lowland fish
+lab_i[[3]] <- "Lowland fish"
+letter_i[[3]] <- "C"
+d_i[[3]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata,
+                                weight = "WUL_low", 
+                                param = 0.8, 
+                                parallel = FALSE)
+
+# 4: population connectivity index with highland fish
+lab_i[[4]] <- "Highland fish"
+letter_i[[4]] <- "D"
+d_i[[4]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata,
+                                weight = "WUL_high", 
+                                param = 0.8, 
+                                parallel = FALSE)
+
+# 5: population connectivity index with lowland diadromous fish
+lab_i[[5]] <- "Lowland diadromous"
+letter_i[[5]] <- "E"
+d_i[[5]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata,
+                                index_type = "reach", 
+                                index_mode = "to",
+                                weight = "WUL_low", 
+                                param = 0.8, 
+                                parallel = FALSE) %>%
+  dplyr::filter(name == as.character(outlet))
+
+# 6: population connectivity index with highland diadromous fish
+lab_i[[6]] <- "Highland diadromous"
+letter_i[[6]] <- "F"
+d_i[[6]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata,
+                                index_type = "reach", 
+                                index_mode = "to",
+                                weight = "WUL_high", 
+                                param = 0.8,
+                                parallel = FALSE) %>%
+  dplyr::filter(name == as.character(outlet))
+
+
+# 7: population connectivity index with lowland diadromous fish
+## note that units of param_d must be consistent with length field (10s of km)
+lab_i[[7]] <- "Lowland passive"
+letter_i[[7]] <- "G"
+d_i[[7]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata,
+                                weight = "WUL_low", 
+                                dir_distance_type  = "asymmetric",
+                                disp_type = "threshold", 
+                                param_u = 0, 
+                                param_d = 3, 
+                                parallel = FALSE)
+
+# 8: population connectivity index with highland passive drifter
+## note that units of param_d must be consistent with length field (10s of km)
+lab_i[[8]] <- "Highland passive"
+letter_i[[8]] <- "H"
+d_i[[8]] <- d_index_calculation(graph = river_graph, 
+                                barriers_metadata = barriers_metadata,
+                                weight = "WUL_high", 
+                                dir_distance_type  = "asymmetric",
+                                disp_type = "threshold",
+                                param_u = 0, 
+                                param_d = 3, 
+                                parallel = FALSE)
+```
+
+Resulting maps can be plotted to visually compare the results.
+```{r d index plot, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Initialize empty list
+plot_list <- list()
+
+# iterate through list length
+for (i in 1:length(d_i)) {
+  
+  # Join d_i information with dams shapefile
+  network_links_plot <- network_links %>%
+  filter(type == "dam") %>% 
+  left_join(d_i[[i]])
+
+  # plot
+  plot_list[[i]] <- ggplot() +
+    coord_fixed() +
+    ggspatial::layer_spatial(river_net_simplified, color = "gray70")+
+    ggspatial::layer_spatial(network_links_plot, 
+                             aes(color = d_index, size = d_index), alpha = 0.8)+
+    scale_color_viridis(name = "dI")+
+    theme_void()+
+    guides(size = FALSE) +
+    ggtitle(letter_i[[i]])+
+    labs(caption = lab_i[[i]])
+}
+
+plot_final <- gridExtra::grid.arrange(
+  plot_list[[1]],
+  plot_list[[2]],
+  plot_list[[3]], 
+  plot_list[[4]], 
+  plot_list[[5]],
+  plot_list[[6]],
+  plot_list[[7]],
+  plot_list[[8]],
+  ncol = 2)
+plot_final
+
+ggsave(plot = plot_final, "Figures/barriers_prioritization.jpeg",  
+       width = 19, height = 19, units = "cm")
+
+```
+
+A corrleation plot hepls identifying the correlated indices
+```{r correlation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+d_index_chart <- data.frame("d_i_1" = d_i[[1]]$d_index, 
+                            "d_i_2" = d_i[[2]]$d_index,
+                            "d_i_3" = d_i[[3]]$d_index,
+                            "d_i_4" = d_i[[4]]$d_index,
+                            "d_i_5" = d_i[[5]]$d_index,
+                            "d_i_6" = d_i[[6]]$d_index,
+                            "d_i_7" = d_i[[7]]$d_index,
+                            "d_i_8" = d_i[[8]]$d_index)
+
+colnames(d_index_chart) <- c(letter_i[[1]], letter_i[[2]], letter_i[[3]], 
+                             letter_i[[4]], letter_i[[5]], letter_i[[6]],
+                             letter_i[[7]], letter_i[[8]])
+
+# Spearman corrlations between rankings calculated with different priorities
+cor(d_index_chart, method = "spearman")
+corrmorant::corrmorant(d_index_chart, corr_method = "spearman")
+ggsave("Figures/ranking comparison.jpeg",  width = 19, height = 19, units = "cm")
+```
+
+
+\newpage
+# Appendix A: R session information
+```{r get session info, message=FALSE} 
+devtools::session_info()
+```
+
+\newpage
+# Appendix B: Source code of the custom functions used to support the processing the data
+```{r display funs source code,code = readLines("functions_network_creation.R")} 
+```
+
+\newpage
+# References and key literature
+
+Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
+
+Lehner, B., Grill G. (2013): Global river hydrography and network routing: baseline data and new approaches to study the world’s large river systems. Hydrological Processes, 27(15): 2171–2186. Data is available at www.hydrosheds.org.
+
+Belletti, Barbara, et al. "More than one million barriers fragment Europe’s rivers." Nature 588.7838 (2020): 436-441.
+
+Verdin, K. L., & Verdin, J. P. (1999). A topological system for delineation and codification of the Earth’s river basins. Journal of Hydrology, 218(1-2), 1-12.
+
+Cote, D., Kehler, D. G., Bourne, C., & Wiersma, Y. F. (2009). A new measure of longitudinal connectivity for stream networks. Landscape Ecology, 24(1), 101-113.
+
+Kolaczyk, E. D., & Csárdi, G. (2014). Statistical analysis of network data with R (Vol. 65). New York: Springer.
+
+Jumani, S., Deitch, M. J., Kaplan, D., Anderson, E. P., Krishnaswamy, J., Lecours, V., & Whiles, M. R. (2020). River fragmentation and flow alteration metrics: a review of methods and directions for future research. Environmental Research Letters.
+
+
