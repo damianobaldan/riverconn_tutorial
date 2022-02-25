@@ -1,4 +1,4 @@
-# Riverconn_Dami
+# riverconn_tutorial
 
 This folder contains the source code for the tutorial of the riverconn R package. 
 
