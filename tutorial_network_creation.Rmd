@@ -1,8 +1,6 @@
 ---
 title: "Tutorial to create `igraph` objects from spatial data and calculate fragmentation indices with `riverconn`"
-author: 
-  - "Damiano Baldan"
-  - "David Cunillera-Moncusi"
+author: "Damiano Baldan, David Cunillera-Moncusi"
 date: "`r Sys.Date()`"
 output: rmdformats::downcute
 knit: (function(input_file, encoding) {
@@ -19,6 +17,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # 1. Introduction
 
 This document is a step-by-step guide to create an `igraph` object starting from commonly available geodata. Here, an example is provided using data for the Ebro river (Spain), based on widely available geodata from HydroSHEDS and public repositories from the Hydrographic Confederation of the Ebro river [`CHE`](http://iber.chebro.es/geoportal/).
+
+The source code used to generate this tutorial is available on [github](https://github.com/damianobaldan/riverconn_tutorial) in the file `tutorial_network_creation.Rmd`; additional functions used in the tutorial are stored in the file `functions_network_creation.R`.
 
 After this tutorial is completed, the resulting  `igraph` object is meant to be used as input to functions to assess riverscape fragmentation. The [`riverconn`](https://github.com/damianobaldan/riverconn) R package allows implements a lot of such indices.  Most graph theory-based indices to asses fragmentation (see Jumani et al., 2020 for a review) conceptualize the riverscape as a graph where vertices (nodes) represent reaches, i.e. distintictly separated river sections; while edges (links) represent splitting objects, such as confluences (where two reaches join), barriers (items that disrupt the longitudial connectivity of the river), or habitat patches boundaries (borders between sections of the river with relatively uniform habitat conditions). This tutorial focuses on barriers (dams), but in principle other fragmentation inputs can be dealt with similarly.
 

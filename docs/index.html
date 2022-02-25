@@ -5,8 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="generator" content="pandoc" />
 
-        <meta name="author" content="Damiano Baldan" />
-        <meta name="author" content="David Cunillera-Moncusi" />
+        <meta name="author" content="Damiano Baldan, David Cunillera-Moncusi" />
     
         <meta name="date" content="2022-02-25" />
     
@@ -159,9 +158,7 @@
       <h1 class="title">Tutorial to create <code>igraph</code> objects from spatial data and calculate fragmentation indices with <code>riverconn</code></h1>
       
       <p class="authors">
-           <span class="glyphicon glyphicon-user"></span> Damiano Baldan
-      </p>
-           <span class="glyphicon glyphicon-user"></span> David Cunillera-Moncusi
+           <span class="glyphicon glyphicon-user"></span> Damiano Baldan, David Cunillera-Moncusi
       </p>
          <p class="date"><span class="glyphicon glyphicon-calendar"></span> 2022-02-25</p>
            
@@ -174,6 +171,7 @@
 <div id="introduction" class="section level1">
 <h1>1. Introduction</h1>
 <p>This document is a step-by-step guide to create an <code>igraph</code> object starting from commonly available geodata. Here, an example is provided using data for the Ebro river (Spain), based on widely available geodata from HydroSHEDS and public repositories from the Hydrographic Confederation of the Ebro river <a href="http://iber.chebro.es/geoportal/"><code>CHE</code></a>.</p>
+<p>The source code used to generate this tutorial is available on <a href="https://github.com/damianobaldan/riverconn_tutorial">github</a> in the file <code>tutorial_network_creation.Rmd</code>; additional functions used in the tutorial are stored in the file <code>functions_network_creation.R</code>.</p>
 <p>After this tutorial is completed, the resulting <code>igraph</code> object is meant to be used as input to functions to assess riverscape fragmentation. The <a href="https://github.com/damianobaldan/riverconn"><code>riverconn</code></a> R package allows implements a lot of such indices. Most graph theory-based indices to asses fragmentation (see Jumani et al., 2020 for a review) conceptualize the riverscape as a graph where vertices (nodes) represent reaches, i.e. distintictly separated river sections; while edges (links) represent splitting objects, such as confluences (where two reaches join), barriers (items that disrupt the longitudial connectivity of the river), or habitat patches boundaries (borders between sections of the river with relatively uniform habitat conditions). This tutorial focuses on barriers (dams), but in principle other fragmentation inputs can be dealt with similarly.</p>
 <p>The <a href="https://cran.r-project.org/web/packages/igraph/index.html"><code>igraph</code></a> package implements routines for graphs and network analysis. It can handle large graphs very well and provides functions for generating random and regular graphs, graph visualization, centrality methods and much more. The packages allows for easy <a href="https://igraph.org/r/doc/aaa-igraph-package.html">construction</a> of <code>igraph</code> objects based on symbolic description of edges and vertices, edges and vertices lists, or adjacency matrices. The book <a href="https://link.springer.com/book/10.1007%2F978-3-030-44129-6">Statistical Analysis of Network Data with R by Kolaczyk and Csardi (2014)</a> offers a comprehensive tutorial on the possibilities offered by the <code>igraph</code> package, including network data manipulation and visualization, descriptive analysis of network graphs, mathematical and statistical modeling of graphs, and network topology inference.</p>
 <div id="packages-needed" class="section level2">
@@ -223,10 +221,10 @@ library(RANN)</code></pre>
 <p>The construction of the <code>igraph</code> object requires at least some information on the spatial geometry of the river system and the position of the barriers.</p>
 <p>The river network shapefile can be retrieved from <a href="https://www.hydrosheds.org/page/overview">HydroSHEDS</a>, a global river network geo-referenced dataset derived from spaceborn elevation data. HydroSHEDS is widely used for global to regional analyses (Lehner et al., 2008). Data can be downloaded from <a href="https://www.hydrosheds.org/downloads">here</a>. River networks shapefiles (HydroRIVERS) are available at two different resolutions (15 and 30 sec). Basins and catchments shapefiles (HydroBASINS) are also available with 12 detail levels (Lehner et al., 2013). The Ebro catchment border can be selected from the polygons available in the HydroBASINS layer and the corresponding network can be extracted from the HydroSHEDS layer.</p>
 <p>The shapefile with the geographic position of the dams was obtained from the Ebro river public Geographic Information System <a href="http://iber.chebro.es/geoportal/">CHE website</a>.</p>
-<p>The obtained files can be imported in R.</p>
+<p>The obtained files can be imported in R (note that the river shapefile “Ebre_riv_modif.shp” has been sligtly modified from the original hydrosheds shapefile -see next sections on the checks carried out on the shapefiles. The original shapefile is saved in the Ebro_shape/ folder for comparison).</p>
 <pre class="r"><code>shape_river&lt;- st_read(&quot;Ebre_shape/Ebre_riv_modif.shp&quot;)
 ## Reading layer `Ebre_riv_modif&#39; from data source 
-##   `C:\Users\Damiano\Dropbox\Riverconn_Dami\Ebre_shape\Ebre_riv_modif.shp&#39; 
+##   `C:\Users\Damiano\Dropbox\riverconn_tutorial\Ebre_shape\Ebre_riv_modif.shp&#39; 
 ##   using driver `ESRI Shapefile&#39;
 ## Simple feature collection with 2911 features and 2 fields
 ## Geometry type: LINESTRING
@@ -235,7 +233,7 @@ library(RANN)</code></pre>
 ## Geodetic CRS:  WGS 84
 shape_basin &lt;- st_read(&quot;Ebre_catchment/Ebro_catchment.shp&quot;)
 ## Reading layer `Ebro_catchment&#39; from data source 
-##   `C:\Users\Damiano\Dropbox\Riverconn_Dami\Ebre_catchment\Ebro_catchment.shp&#39; 
+##   `C:\Users\Damiano\Dropbox\riverconn_tutorial\Ebre_catchment\Ebro_catchment.shp&#39; 
 ##   using driver `ESRI Shapefile&#39;
 ## Simple feature collection with 1 feature and 13 fields
 ## Geometry type: POLYGON
@@ -244,7 +242,7 @@ shape_basin &lt;- st_read(&quot;Ebre_catchment/Ebro_catchment.shp&quot;)
 ## Geodetic CRS:  WGS 84
 shape_dams &lt;- st_read(&quot;Ebre_Dams/Embalses/Embalses.shp&quot;)
 ## Reading layer `Embalses&#39; from data source 
-##   `C:\Users\Damiano\Dropbox\Riverconn_Dami\Ebre_Dams\Embalses\Embalses.shp&#39; 
+##   `C:\Users\Damiano\Dropbox\riverconn_tutorial\Ebre_Dams\Embalses\Embalses.shp&#39; 
 ##   using driver `ESRI Shapefile&#39;
 ## Simple feature collection with 224 features and 3 fields
 ## Geometry type: MULTIPOLYGON
@@ -480,10 +478,10 @@ river_graph &lt;- create_network(network_links, river_net_simplified, outlet)</c
 <p><code>river_graph</code> is an object of class <code>igraph</code> that keeps the attributes present in the shapefile and in the junction.</p>
 <pre class="r"><code># Check igraph object
 river_graph
-## IGRAPH 60047c8 DN-- 650 649 -- 
+## IGRAPH c233114 DN-- 650 649 -- 
 ## + attr: name (v/c), length (v/n), alt (v/n), type (e/c), id_links
 ## | (e/n), id_barrier (e/c), pass_u (e/n), pass_d (e/n)
-## + edges from 60047c8 (vertex names):
+## + edges from c233114 (vertex names):
 ##  [1] 552-&gt;521 520-&gt;521 521-&gt;522 534-&gt;522 642-&gt;643 646-&gt;643 639-&gt;638 647-&gt;639
 ##  [9] 640-&gt;639 641-&gt;638 635-&gt;636 645-&gt;636 632-&gt;631 631-&gt;628 636-&gt;628 630-&gt;632
 ## [17] 644-&gt;632 628-&gt;627 627-&gt;629 634-&gt;633 633-&gt;629 624-&gt;626 621-&gt;624 596-&gt;624
