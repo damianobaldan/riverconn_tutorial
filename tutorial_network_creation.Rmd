@@ -20,7 +20,7 @@ This document is a step-by-step guide to create an `igraph` object starting from
 
 The source code used to generate this tutorial is available on [github](https://github.com/damianobaldan/riverconn_tutorial) in the file `tutorial_network_creation.Rmd`; additional functions used in the tutorial are stored in the file `functions_network_creation.R`.
 
-After this tutorial is completed, the resulting  `igraph` object is meant to be used as input to functions to assess riverscape fragmentation. The [`riverconn`](https://github.com/damianobaldan/riverconn) R package allows implements a lot of such indices.  Most graph theory-based indices to asses fragmentation (see Jumani et al., 2020 for a review) conceptualize the riverscape as a graph where vertices (nodes) represent reaches, i.e. distintictly separated river sections; while edges (links) represent splitting objects, such as confluences (where two reaches join), barriers (items that disrupt the longitudial connectivity of the river), or habitat patches boundaries (borders between sections of the river with relatively uniform habitat conditions). This tutorial focuses on barriers (dams), but in principle other fragmentation inputs can be dealt with similarly.
+After this tutorial is completed, the resulting  `igraph` object is meant to be used as input to functions to assess riverscape fragmentation. The [`riverconn`](https://github.com/damianobaldan/riverconn) package allows implements a lot of such indices.  Most graph theory-based indices to asses fragmentation (see Jumani et al., 2020 for a review) conceptualize the riverscape as a graph where vertices (nodes) represent reaches, i.e. distintictly separated river sections; while edges (links) represent splitting objects, such as confluences (where two reaches join), barriers (items that disrupt the longitudial connectivity of the river), or habitat patches boundaries (borders between sections of the river with relatively uniform habitat conditions). This tutorial focuses on barriers (dams), but in principle other fragmentation inputs can be dealt with similarly.
 
 The [`igraph`](https://cran.r-project.org/web/packages/igraph/index.html) package implements routines for graphs and network analysis. It can handle large graphs very well and provides functions for generating random and regular graphs, graph visualization, centrality methods and much more. The packages allows for easy [construction](https://igraph.org/r/doc/aaa-igraph-package.html) of `igraph` objects based on symbolic description of edges and vertices, edges and vertices lists, or adjacency matrices. The book [Statistical Analysis of Network Data with R by Kolaczyk and Csardi (2014)](https://link.springer.com/book/10.1007%2F978-3-030-44129-6) offers a comprehensive tutorial on the possibilities offered by the `igraph` package, including network data manipulation and visualization, descriptive analysis of network graphs, mathematical and statistical modeling of graphs, and network topology inference.
 
@@ -52,6 +52,7 @@ library(lwgeom)
 library(gridExtra)
 library(corrmorant)
 library(RANN)
+library(ggpubr)
 ```
 
 Most of the geospatial processing in this tutorial occurs on `sf` objects. Thanks to their data.frame-like structure, spatial operations (e.g., selecting and updating columns and rows, join with other data frames) are "easier" on such objects. Most spatial objects are converted to this class as soon as possible in the script.
@@ -427,11 +428,174 @@ ggplot(gg0, aes(x = x, y = y, xend = xend, yend = yend)) +
 
 ```
 
-# 4. Calculation of the indices
-Here some example of indices for riverscape connectivity applied to river graphs are presented.
+# 4. Indices calculations
+Here some example of indices for river network connectivity applied to river graphs are presented.
 
-## 4.1 Dams removal prioritization
-The function `d_index_calculation` from the `riverconn` package is used to identify dams whose passability improvement can best benefit the catchment connectivity. Check the package vignette for details on the indices used to this end. Here we use different setups based on the habitat and the dispersal mode to check weather the prioritization changes.
+## 4.1 Reach-scale indices
+The funtion `index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to calculate reach-scale connectivity indices (RCI). For comparison purposes, different indices are calculated: (A) Dendritic connectivity index with symmetric dams passabilities; (B) Dendritic connectivity index with asymmetric dams passabilities; (C) Integral Index of connectivity (dams are not passable and a threshold on dispersal distance is used); (D) Integral Index of connectivity with uniform weights; (E) lowland-preferring organisms with active aquatic dispersal (e.g. fish), (F) highland-preferring organisms with active aquatic dispersal (e.g. fish), (G) lowland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage), (H) highland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage, bivalve)
+
+```{r index calculation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Initialize list where to store all the index calculation outputs
+index <- list()
+lab_index <- list()
+letter_index <- list()
+
+# 1: Symmetric Dendritic Connectivity Index (no biotic effects)
+lab_index[[1]] <- "Symmetric DCI"
+letter_index[[1]] <- "A"
+index[[1]] <- index_calculation(graph = river_graph,
+                                weight = "length",
+                                B_ij_flag = FALSE,
+                                index_type = "reach",
+                                index_mode = "from")
+
+# 2: Asymmetric Dendritic Connectivity Index (no biotic effects)
+lab_index[[2]] <- "Asymmetric DCI"
+letter_index[[2]] <- "B"
+index[[2]] <- index_calculation(graph = river_graph,
+                                weight = "length",
+                                B_ij_flag = FALSE,
+                                dir_fragmentation_type = "asymmetric",
+                                index_type = "reach",
+                                index_mode = "from")
+
+## Before calculating IIC a binary passability has to be defined
+E(river_graph)$pass_u_bin <- ifelse(is.na(E(river_graph)$pass_u), NA, 0)
+E(river_graph)$pass_d_bin <- ifelse(is.na(E(river_graph)$pass_d), NA, 0)
+
+# 3: Symmetric Integral Index of Connectivity
+lab_index[[3]] <- "IIC"
+letter_index[[3]] <- "C"
+index[[3]] <- index_calculation(graph = river_graph,
+                                weight = "length",
+                                pass_u = "pass_u_bin",
+                                pass_d = "pass_d_bin",
+                                param = 3,
+                                disp_type = "threshold",
+                                index_type = "reach",
+                                index_mode = "from")
+
+## Defining uniform weights for IIC
+V(river_graph)$unif_w <- 1
+
+# 4: Integral Index of Connectivity with uniform weights
+lab_index[[4]] <- "IIC with uniform weights"
+letter_index[[4]] <- "D"
+index[[4]] <- index_calculation(graph = river_graph,
+                                weight = "unif_w",
+                                dir_fragmentation_type = "asymmetric",
+                                pass_u = "pass_u_bin",
+                                pass_d = "pass_d_bin",
+                                param = 3,
+                                disp_type = "threshold",
+                                index_type = "reach",
+                                index_mode = "from")
+
+# 5: Population Connectivity Index for lowland fish
+lab_index[[5]] <- "PCI lowland fish"
+letter_index[[5]] <- "E"
+index[[5]] <- index_calculation(graph = river_graph,
+                                weight = "WUL_low", 
+                                param = 0.8,
+                                index_type = "reach",
+                                index_mode = "from") 
+
+# 6: Population Connectivity Index for highland fish
+lab_index[[6]] <- "PCI highland fish"
+letter_index[[6]] <- "F"
+index[[6]] <- index_calculation(graph = river_graph,
+                                weight = "WUL_high", 
+                                param = 0.8,
+                                index_type = "reach",
+                                index_mode = "from") 
+
+
+# 7: Population Connectivity Index for lowland passive drifter
+## note that units of param_d must be consistent with length field (10s of km)
+lab_index[[7]] <- "PCI lowland passive"
+letter_index[[7]] <- "G"
+index[[7]] <- index_calculation(graph = river_graph,
+                                weight = "WUL_low", 
+                                dir_distance_type  = "asymmetric",
+                                disp_type = "threshold", 
+                                param_u = 0, 
+                                param_d = 3,
+                                index_type = "reach",
+                                index_mode = "from")
+
+# 8: Population Connectivity Index for highland passive drifter
+## note that units of param_d must be consistent with length field (10s of km)
+lab_index[[8]] <- "PCI highland passive"
+letter_index[[8]] <- "H"
+index[[8]] <- index_calculation(graph = river_graph,
+                                weight = "WUL_high", 
+                                dir_distance_type  = "asymmetric",
+                                disp_type = "threshold",
+                                param_u = 0, 
+                                param_d = 3,
+                                index_type = "reach",
+                                index_mode = "from")
+```
+
+Resulting maps can be plotted to visually compare the results. For comparisons between different indices, reach ranks are plotted. The lowest rank is the total number of reaches (ca. 650).
+```{r index plot, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+# Initialize empty list
+plot_list <- list()
+
+# iterate through list length
+for (i in 1:length(index)) {
+  
+  # Join d_i information with dams shapefile
+  river_plot <- river_net_simplified %>%
+    mutate(name = as.character(EdgeID)) %>%
+    left_join(index[[i]]) %>%
+    mutate(rank = rank(desc(index)))
+
+  # plot
+  plot_list[[i]] <- ggplot() +
+    coord_fixed() +
+    ggspatial::layer_spatial(river_plot, aes(color = rank))+
+    scale_color_viridis(name = "Ranking", direction = -1)+
+    theme_void()+
+    guides(size = FALSE) +
+    theme(legend.position = "bottom")+
+    ggtitle(paste0(letter_index[[i]], ") ", lab_index[[i]]))
+}
+
+plot_final <- ggpubr::ggarrange( plotlist = plot_list,
+  common.legend = TRUE,
+  legend = "bottom")
+plot_final
+
+ggsave(plot = plot_final, "Figures/habitat_prioritization.jpeg",  
+       width = 19, height = 19, units = "cm")
+
+```
+
+A correlation plot helps identifying the correlated indices
+```{r index correlation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+d_index_chart <- data.frame("d_i_1" = index[[1]]$index, 
+                            "d_i_2" = index[[2]]$index,
+                            "d_i_3" = index[[3]]$index,
+                            "d_i_4" = index[[4]]$index,
+                            "d_i_5" = index[[5]]$index,
+                            "d_i_6" = index[[6]]$index,
+                            "d_i_7" = index[[7]]$index,
+                            "d_i_8" = index[[8]]$index)
+
+colnames(d_index_chart) <- c(letter_index[[1]], letter_index[[2]], letter_index[[3]], 
+                             letter_index[[4]], letter_index[[5]], letter_index[[6]],
+                             letter_index[[7]], letter_index[[8]])
+
+# Spearman corrlations between rankings calculated with different priorities
+cor(d_index_chart, method = "spearman")
+corrmorant::corrmorant(d_index_chart, corr_method = "spearman")
+ggsave("Figures/ranking_habitat_comparison.jpeg",  width = 19, height = 19, units = "cm")
+```
+
+
+## 4.2 Dams removal prioritization
+The function `d_index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to identify dams whose passability improvement can best benefit the catchment connectivity. Check the package vignette for details on the indices used to this end. Here we use the same setups described above (section 4.1).
 
 First dams metadata are to be defined. The object is saved as a dataframe that stores the id of the dams to be individually tested in a column, and the relative improvements in upstream and downstream passabilies (here improvement is assumed to be uniformly 1).
 ```{r dams metadata, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
@@ -441,137 +605,140 @@ barriers_metadata <- data.frame("id_barrier" =  E(river_graph)$id_barrier[!is.na
 head(barriers_metadata)
 ```
 
-Next, the dams prioritization can be executed. The calculation may take a while depending on the computer where it is run. There is the option to parallelize the process (marking -> parallel=TRUE and the number of cores devoted -> ncores= ). It takes 4 minutes with parallel=FALSE for this example in a computer with this procesor: 11th Gen Intel Core i7, 3.30 GHz and 32 GbRAM. On the other hand it takes 1.5 minutes when parallelizing with 7 cores (parallel = TRUE,ncores = 7). To parallelize `doParallel` package is required.       
+Next, the dams prioritization can be executed. The calculation may take a while depending on the computer where it is run. There is the option to parallelize the process (marking -> `parallel=TRUE` and the number of cores devoted -> ncores= ). It takes 4 minutes with `parallel=FALSE` for this example in a computer with this procesor: 11th Gen Intel Core i7, 3.30 GHz and 32 GbRAM. On the other hand it takes 1.5 minutes when parallelizing with 7 cores (`parallel = TRUE`, `ncores = 7`). To parallelize calculations, the `doParallel` package is required.       
 
 ```{r d index calculation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize list where to store all the index calculation outputs
-d_i <- list()
-lab_i <- list()
-letter_i <- list()
+d_index <- list()
+lab_d_index <- list()
+letter_d_index <- list()
 
-# 1: symmetric dendritic connectivity index (no biotic effects)
-lab_i[[1]] <- "Structural symmetric"
-letter_i[[1]] <- "A"
-d_i[[1]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata,
-                                B_ij_flag = FALSE, 
-                                parallel = FALSE)
+# 1: Symmetric Dendritic Connectivity Index (no biotic effects)
+lab_d_index[[1]] <- "Symmetric DCI"
+letter_d_index[[1]] <- "A"
+d_index[[1]] <- d_index_calculation(graph = river_graph, 
+                                    barriers_metadata = barriers_metadata,
+                                    B_ij_flag = FALSE, 
+                                    parallel = FALSE)
 
-# 2: asymmetric dendritic connectivity index (no biotic effects)
-lab_i[[2]] <- "Structural asymmetric"
-letter_i[[2]] <- "B"
-d_i[[2]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata, 
-                                B_ij_flag = FALSE, 
-                                parallel = FALSE, 
-                                dir_fragmentation_type = "asymmetric")
+# 2: Asymmetric Dendritic Connectivity Index (no biotic effects)
+lab_d_index[[2]] <- "Asymmetric DCI"
+letter_d_index[[2]] <- "B"
+d_index[[2]] <- d_index_calculation(graph = river_graph, 
+                                    barriers_metadata = barriers_metadata, 
+                                    B_ij_flag = FALSE, 
+                                    parallel = FALSE, 
+                                    dir_fragmentation_type = "asymmetric")
 
-# 3: population connectivity index with lowland fish
-lab_i[[3]] <- "Lowland fish"
-letter_i[[3]] <- "C"
-d_i[[3]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata,
-                                weight = "WUL_low", 
-                                param = 0.8, 
-                                parallel = FALSE)
+## Before calculating IIC a binary passability has to be defined
+E(river_graph)$pass_u_bin <- ifelse(is.na(E(river_graph)$pass_u), NA, 0)
+E(river_graph)$pass_d_bin <- ifelse(is.na(E(river_graph)$pass_d), NA, 0)
 
-# 4: population connectivity index with highland fish
-lab_i[[4]] <- "Highland fish"
-letter_i[[4]] <- "D"
-d_i[[4]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata,
-                                weight = "WUL_high", 
-                                param = 0.8, 
-                                parallel = FALSE)
+# 3: Symmetric Integral Index of Connectivity
+lab_d_index[[3]] <- "Symmetric IIC"
+letter_d_index[[3]] <- "C"
+d_index[[3]] <- d_index_calculation(graph = river_graph,
+                                    barriers_metadata = barriers_metadata, 
+                                    weight = "WUL_low",
+                                    pass_u = "pass_u_bin",
+                                    pass_d = "pass_d_bin",
+                                    param = 3,
+                                    disp_type = "threshold",
+                                    parallel = FALSE)
 
-# 5: population connectivity index with lowland diadromous fish
-lab_i[[5]] <- "Lowland diadromous"
-letter_i[[5]] <- "E"
-d_i[[5]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata,
-                                index_type = "reach", 
-                                index_mode = "to",
-                                weight = "WUL_low", 
-                                param = 0.8, 
-                                parallel = FALSE) %>%
-  dplyr::filter(name == as.character(outlet))
+## Defining uniform weights for IIC
+V(river_graph)$unif_w <- 1
 
-# 6: population connectivity index with highland diadromous fish
-lab_i[[6]] <- "Highland diadromous"
-letter_i[[6]] <- "F"
-d_i[[6]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata,
-                                index_type = "reach", 
-                                index_mode = "to",
-                                weight = "WUL_high", 
-                                param = 0.8,
-                                parallel = FALSE) %>%
-  dplyr::filter(name == as.character(outlet))
+# 4: Integral Index of Connectivity with uniform weights
+lab_d_index[[4]] <- "IIC with uniform weights"
+letter_d_index[[4]] <- "D"
+d_index[[4]] <- d_index_calculation(graph = river_graph,
+                                    barriers_metadata = barriers_metadata, 
+                                    weight = "unif_w",
+                                    dir_fragmentation_type = "asymmetric",
+                                    pass_u = "pass_u_bin",
+                                    pass_d = "pass_d_bin",
+                                    param = 3,
+                                    disp_type = "threshold",
+                                    parallel = FALSE)
+
+# 5: Population Connectivity Index for lowland fish
+lab_d_index[[5]] <- "PCI lowland fish"
+letter_d_index[[5]] <- "E"
+d_index[[5]] <- d_index_calculation(graph = river_graph,
+                                    barriers_metadata = barriers_metadata, 
+                                    weight = "WUL_low", 
+                                    param = 0.8,
+                                    parallel = FALSE) 
+
+# 6: Population Connectivity Index for highland fish
+lab_d_index[[6]] <- "PCI highland fish"
+letter_d_index[[6]] <- "F"
+d_index[[6]] <- d_index_calculation(graph = river_graph,
+                                    barriers_metadata = barriers_metadata, 
+                                    weight = "WUL_high", 
+                                    param = 0.8,
+                                    parallel = FALSE )
 
 
-# 7: population connectivity index with lowland diadromous fish
+# 7: Population Connectivity Index for lowland passive drifter
 ## note that units of param_d must be consistent with length field (10s of km)
-lab_i[[7]] <- "Lowland passive"
-letter_i[[7]] <- "G"
-d_i[[7]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata,
-                                weight = "WUL_low", 
-                                dir_distance_type  = "asymmetric",
-                                disp_type = "threshold", 
-                                param_u = 0, 
-                                param_d = 3, 
-                                parallel = FALSE)
+lab_d_index[[7]] <- "PCI lowland passive"
+letter_d_index[[7]] <- "G"
+d_index[[7]] <- d_index_calculation(graph = river_graph,
+                                    barriers_metadata = barriers_metadata, 
+                                    weight = "WUL_low", 
+                                    dir_distance_type  = "asymmetric",
+                                    disp_type = "threshold", 
+                                    param_u = 0, 
+                                    param_d = 3,
+                                    parallel = FALSE)
 
-# 8: population connectivity index with highland passive drifter
+# 8: Population Connectivity Index for highland passive drifter
 ## note that units of param_d must be consistent with length field (10s of km)
-lab_i[[8]] <- "Highland passive"
-letter_i[[8]] <- "H"
-d_i[[8]] <- d_index_calculation(graph = river_graph, 
-                                barriers_metadata = barriers_metadata,
-                                weight = "WUL_high", 
-                                dir_distance_type  = "asymmetric",
-                                disp_type = "threshold",
-                                param_u = 0, 
-                                param_d = 3, 
-                                parallel = FALSE)
+lab_d_index[[8]] <- "PCI highland passive"
+letter_d_index[[8]] <- "H"
+d_index[[8]] <- d_index_calculation(graph = river_graph,
+                                    barriers_metadata = barriers_metadata, 
+                                    weight = "WUL_high", 
+                                    dir_distance_type  = "asymmetric",
+                                    disp_type = "threshold",
+                                    param_u = 0, 
+                                    param_d = 3,
+                                    parallel = FALSE)
+
 ```
 
-Resulting maps can be plotted to visually compare the results.
+Resulting maps can be plotted to visually compare the results. For comparisons between different indices, barriers ranks are plotted. The lowest rank is the total number of barriers (ca. 80).
 ```{r d index plot, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize empty list
 plot_list <- list()
 
 # iterate through list length
-for (i in 1:length(d_i)) {
+for (i in 1:length(d_index)) {
   
   # Join d_i information with dams shapefile
   network_links_plot <- network_links %>%
-  filter(type == "dam") %>% 
-  left_join(d_i[[i]])
+    filter(type == "dam") %>% 
+    left_join(d_index[[i]]) %>%
+    mutate(d_rank = rank(desc(d_index)))
 
   # plot
   plot_list[[i]] <- ggplot() +
     coord_fixed() +
     ggspatial::layer_spatial(river_net_simplified, color = "gray70")+
     ggspatial::layer_spatial(network_links_plot, 
-                             aes(color = d_index, size = d_index), alpha = 0.8)+
-    scale_color_viridis(name = "dI")+
+                             aes(color = d_rank, size = 1/d_rank), alpha = 0.8)+
+    scale_color_viridis(name = "Ranking", direction = -1)+
     theme_void()+
     guides(size = FALSE) +
-    ggtitle(letter_i[[i]])+
-    labs(caption = lab_i[[i]])
+    theme(legend.position = "bottom")+
+    ggtitle(paste0(letter_d_index[[i]], ") ", lab_d_index[[i]]))
 }
 
-plot_final <- gridExtra::grid.arrange(
-  plot_list[[1]],
-  plot_list[[2]],
-  plot_list[[3]], 
-  plot_list[[4]], 
-  plot_list[[5]],
-  plot_list[[6]],
-  plot_list[[7]],
-  plot_list[[8]],
-  ncol = 2)
+plot_final <- ggpubr::ggarrange( plotlist = plot_list,
+  common.legend = TRUE,
+  legend = "bottom")
 plot_final
 
 ggsave(plot = plot_final, "Figures/barriers_prioritization.jpeg",  
@@ -581,18 +748,18 @@ ggsave(plot = plot_final, "Figures/barriers_prioritization.jpeg",
 
 A corrleation plot hepls identifying the correlated indices
 ```{r correlation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
-d_index_chart <- data.frame("d_i_1" = d_i[[1]]$d_index, 
-                            "d_i_2" = d_i[[2]]$d_index,
-                            "d_i_3" = d_i[[3]]$d_index,
-                            "d_i_4" = d_i[[4]]$d_index,
-                            "d_i_5" = d_i[[5]]$d_index,
-                            "d_i_6" = d_i[[6]]$d_index,
-                            "d_i_7" = d_i[[7]]$d_index,
-                            "d_i_8" = d_i[[8]]$d_index)
+d_index_chart <- data.frame("d_i_1" = d_index[[1]]$d_index, 
+                            "d_i_2" = d_index[[2]]$d_index,
+                            "d_i_3" = d_index[[3]]$d_index,
+                            "d_i_4" = d_index[[4]]$d_index,
+                            "d_i_5" = d_index[[5]]$d_index,
+                            "d_i_6" = d_index[[6]]$d_index,
+                            "d_i_7" = d_index[[7]]$d_index,
+                            "d_i_8" = d_index[[8]]$d_index)
 
-colnames(d_index_chart) <- c(letter_i[[1]], letter_i[[2]], letter_i[[3]], 
-                             letter_i[[4]], letter_i[[5]], letter_i[[6]],
-                             letter_i[[7]], letter_i[[8]])
+colnames(d_index_chart) <- c(letter_d_index[[1]], letter_d_index[[2]], letter_d_index[[3]], 
+                             letter_d_index[[4]], letter_d_index[[5]], letter_d_index[[6]],
+                             letter_d_index[[7]], letter_d_index[[8]])
 
 # Spearman corrlations between rankings calculated with different priorities
 cor(d_index_chart, method = "spearman")
