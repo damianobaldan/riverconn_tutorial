@@ -53,6 +53,7 @@ library(gridExtra)
 library(corrmorant)
 library(RANN)
 library(ggpubr)
+library(cowplot)
 ```
 
 Most of the geospatial processing in this tutorial occurs on `sf` objects. Thanks to their data.frame-like structure, spatial operations (e.g., selecting and updating columns and rows, join with other data frames) are "easier" on such objects. Most spatial objects are converted to this class as soon as possible in the script.
@@ -432,7 +433,7 @@ ggplot(gg0, aes(x = x, y = y, xend = xend, yend = yend)) +
 Here some example of indices for river network connectivity applied to river graphs are presented.
 
 ## 4.1 Reach-scale indices
-The funtion `index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to calculate reach-scale connectivity indices (RCI). For comparison purposes, different indices are calculated: (A) Dendritic connectivity index with symmetric dams passabilities; (B) Dendritic connectivity index with asymmetric dams passabilities; (C) Integral Index of connectivity (dams are not passable and a threshold on dispersal distance is used); (D) Integral Index of connectivity with uniform weights; (E) lowland-preferring organisms with active aquatic dispersal (e.g. fish), (F) highland-preferring organisms with active aquatic dispersal (e.g. fish), (G) lowland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage), (H) highland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage, bivalve)
+The funtion `index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to calculate reach-scale connectivity indices (RCI). Refer to the package vignette for details on the calculation of the indices. For comparison purposes, different indices are calculated: (A) Dendritic connectivity index with symmetric dams passabilities; (B) Dendritic connectivity index with asymmetric dams passabilities; (C) Integral Index of connectivity (dams are not passable and a threshold on dispersal distance is used); (D) Integral Index of connectivity with uniform weights; (E) lowland-preferring organisms with active aquatic dispersal (e.g. fish), (F) highland-preferring organisms with active aquatic dispersal (e.g. fish), (G) lowland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage), (H) highland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage, bivalve). Note that for all those indices, the option `index_mode = "from"` was used, meaning paths exiting from the node are considered for calculating the coincidence probabilities. Thus, such indices can be interpreted as the potential for each node to support dispersal of organisms to the whole river network. An alternative could be to specify `index_mode = "to"`. In this case, only incoming links are considered for the calculation of the index, yielding a prioritization based on the node potential for recolonization. Note that when symmetric dispersal and symmetric barriers passability are used, the two indices should overlap.
 
 ```{r index calculation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize list where to store all the index calculation outputs
@@ -552,7 +553,7 @@ for (i in 1:length(index)) {
     mutate(rank = rank(desc(index)))
 
   # plot
-  plot_list[[i]] <- ggplot() +
+  plot_iter <- ggplot() +
     coord_fixed() +
     ggspatial::layer_spatial(river_plot, aes(color = rank))+
     scale_color_viridis(name = "Ranking", direction = -1)+
@@ -560,11 +561,17 @@ for (i in 1:length(index)) {
     guides(size = FALSE) +
     theme(legend.position = "bottom")+
     ggtitle(paste0(letter_index[[i]], ") ", lab_index[[i]]))
+  
+    legend <- cowplot::get_legend(plot_iter)
+  
+  plot_list[[i]] <- plot_iter + 
+    theme(legend.position = "none")
+
 }
 
-plot_final <- ggpubr::ggarrange( plotlist = plot_list,
-  common.legend = TRUE,
-  legend = "bottom")
+plot_list[[length(index)+1]] <- legend
+
+plot_final <- ggpubr::ggarrange( plotlist = plot_list)
 plot_final
 
 ggsave(plot = plot_final, "Figures/habitat_prioritization.jpeg",  
@@ -589,13 +596,15 @@ colnames(d_index_chart) <- c(letter_index[[1]], letter_index[[2]], letter_index[
 
 # Spearman corrlations between rankings calculated with different priorities
 cor(d_index_chart, method = "spearman")
-corrmorant::corrmorant(d_index_chart, corr_method = "spearman")
-ggsave("Figures/ranking_habitat_comparison.jpeg",  width = 19, height = 19, units = "cm")
+corrmorant::corrmorant(d_index_chart, corr_method = "spearman", style = "binned")+
+  theme(legend.position = "bottom") +
+  scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1))
+ggsave("Figures/ranking_habitat_comparison.jpeg",  width = 15, height = 15, units = "cm")
 ```
 
 
-## 4.2 Dams removal prioritization
-The function `d_index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to identify dams whose passability improvement can best benefit the catchment connectivity. Check the package vignette for details on the indices used to this end. Here we use the same setups described above (section 4.1).
+## 4.2 Barriers prioritization
+The function `d_index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to identify barriers whose passability improvement can best benefit the catchment connectivity. Refer to the package vignette for details on the calculation of the indices. Check the package vignette for details on the indices used to this end. Here we use the same setups described above (section 4.1).
 
 First dams metadata are to be defined. The object is saved as a dataframe that stores the id of the dams to be individually tested in a column, and the relative improvements in upstream and downstream passabilies (here improvement is assumed to be uniformly 1).
 ```{r dams metadata, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
@@ -724,7 +733,7 @@ for (i in 1:length(d_index)) {
     mutate(d_rank = rank(desc(d_index)))
 
   # plot
-  plot_list[[i]] <- ggplot() +
+  plot_iter <- ggplot() +
     coord_fixed() +
     ggspatial::layer_spatial(river_net_simplified, color = "gray70")+
     ggspatial::layer_spatial(network_links_plot, 
@@ -734,11 +743,17 @@ for (i in 1:length(d_index)) {
     guides(size = FALSE) +
     theme(legend.position = "bottom")+
     ggtitle(paste0(letter_d_index[[i]], ") ", lab_d_index[[i]]))
+    
+  legend <- cowplot::get_legend(plot_iter)
+  
+  plot_list[[i]] <- plot_iter + 
+    theme(legend.position = "none")
+
 }
 
-plot_final <- ggpubr::ggarrange( plotlist = plot_list,
-  common.legend = TRUE,
-  legend = "bottom")
+plot_list[[length(d_index)+1]] <- legend
+
+plot_final <- ggpubr::ggarrange( plotlist = plot_list )
 plot_final
 
 ggsave(plot = plot_final, "Figures/barriers_prioritization.jpeg",  
@@ -763,8 +778,10 @@ colnames(d_index_chart) <- c(letter_d_index[[1]], letter_d_index[[2]], letter_d_
 
 # Spearman corrlations between rankings calculated with different priorities
 cor(d_index_chart, method = "spearman")
-corrmorant::corrmorant(d_index_chart, corr_method = "spearman")
-ggsave("Figures/ranking comparison.jpeg",  width = 19, height = 19, units = "cm")
+corrmorant::corrmorant(d_index_chart, corr_method = "spearman", style = "binned")+
+  theme(legend.position = "bottom") +
+  scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1))
+ggsave("Figures/ranking comparison.jpeg",  width = 15, height = 15, units = "cm")
 ```
 
 
