@@ -575,7 +575,7 @@ plot_final <- ggpubr::ggarrange( plotlist = plot_list)
 plot_final
 
 ggsave(plot = plot_final, "Figures/habitat_prioritization.jpeg",  
-       width = 19, height = 19, units = "cm")
+       width = 18, height = 12, units = "cm")
 
 ```
 
@@ -757,7 +757,7 @@ plot_final <- ggpubr::ggarrange( plotlist = plot_list )
 plot_final
 
 ggsave(plot = plot_final, "Figures/barriers_prioritization.jpeg",  
-       width = 19, height = 19, units = "cm")
+       width = 18, height = 12, units = "cm")
 
 ```
 
