@@ -433,7 +433,7 @@ ggplot(gg0, aes(x = x, y = y, xend = xend, yend = yend)) +
 Here some example of indices for river network connectivity applied to river graphs are presented.
 
 ## 4.1 Reach-scale indices
-The funtion `index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to calculate reach-scale connectivity indices (RCI). Refer to the package vignette for details on the calculation of the indices. For comparison purposes, different indices are calculated: (A) Dendritic connectivity index with symmetric dams passabilities; (B) Dendritic connectivity index with asymmetric dams passabilities; (C) Integral Index of connectivity (dams are not passable and a threshold on dispersal distance is used); (D) Integral Index of connectivity with uniform weights; (E) lowland-preferring organisms with active aquatic dispersal (e.g. fish), (F) highland-preferring organisms with active aquatic dispersal (e.g. fish), (G) lowland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage), (H) highland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage, bivalve). Note that for all those indices, the option `index_mode = "from"` was used, meaning paths exiting from the node are considered for calculating the coincidence probabilities. Thus, such indices can be interpreted as the potential for each node to support dispersal of organisms to the whole river network. An alternative could be to specify `index_mode = "to"`. In this case, only incoming links are considered for the calculation of the index, yielding a prioritization based on the node potential for recolonization. Note that when symmetric dispersal and symmetric barriers passability are used, the two indices should overlap.
+The funtion `index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to calculate reach-scale connectivity indices (RCI). Refer to the package vignette for details on the calculation of the indices. For comparison purposes, different indices are calculated: (A) Dendritic connectivity index with symmetric dams passabilities; (B) Dendritic connectivity index with asymmetric dams passabilities; (C) Integral Index of connectivity (dams are not passable and a threshold on dispersal distance is used); (D) Integral Index of connectivity with uniform weights; (E) lowland-preferring organisms with active aquatic dispersal (e.g. fish), (F) upland organisms with active aquatic dispersal (e.g. fish), (G) lowland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage), (H) upland organism with passive aquatic dispersal (e.g., invertebrate larval stage, bivalve). Note that for all those indices, the option `index_mode = "from"` was used, meaning paths exiting from the node are considered for calculating the coincidence probabilities. Thus, such indices can be interpreted as the potential for each node to support dispersal of organisms to the whole river network. An alternative could be to specify `index_mode = "to"`. In this case, only incoming links are considered for the calculation of the index, yielding a prioritization based on the node potential for recolonization. Note that when symmetric dispersal and symmetric barriers passability are used, the two indices should overlap.
 
 ```{r index calculation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize list where to store all the index calculation outputs
@@ -501,8 +501,8 @@ index[[5]] <- index_calculation(graph = river_graph,
                                 index_type = "reach",
                                 index_mode = "from") 
 
-# 6: Population Connectivity Index for highland fish
-lab_index[[6]] <- "PCI highland fish"
+# 6: Population Connectivity Index for upland fish
+lab_index[[6]] <- "PCI upland fish"
 letter_index[[6]] <- "F"
 index[[6]] <- index_calculation(graph = river_graph,
                                 weight = "WUL_high", 
@@ -524,9 +524,9 @@ index[[7]] <- index_calculation(graph = river_graph,
                                 index_type = "reach",
                                 index_mode = "from")
 
-# 8: Population Connectivity Index for highland passive drifter
+# 8: Population Connectivity Index for upland passive drifter
 ## note that units of param_d must be consistent with length field (10s of km)
-lab_index[[8]] <- "PCI highland passive"
+lab_index[[8]] <- "PCI upland passive"
 letter_index[[8]] <- "H"
 index[[8]] <- index_calculation(graph = river_graph,
                                 weight = "WUL_high", 
@@ -538,7 +538,7 @@ index[[8]] <- index_calculation(graph = river_graph,
                                 index_mode = "from")
 ```
 
-Resulting maps can be plotted to visually compare the results. For comparisons between different indices, reach ranks are plotted. The lowest rank is the total number of reaches (ca. 650).
+Resulting maps can be plotted to visually compare the results. For comparisons between different indices, reach ranks are plotted. The lowest rank is the total number of reaches (ca. 650). Reaches with higher rankings offer higher potential for being dispersal sources.
 ```{r index plot, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize empty list
 plot_list <- list()
@@ -598,7 +598,8 @@ colnames(d_index_chart) <- c(letter_index[[1]], letter_index[[2]], letter_index[
 cor(d_index_chart, method = "spearman")
 corrmorant::corrmorant(d_index_chart, corr_method = "spearman", style = "binned")+
   theme(legend.position = "bottom") +
-  scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1))
+  scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1)) +
+  theme(axis.text = element_text(size=5))
 ggsave("Figures/ranking_habitat_comparison.jpeg",  width = 15, height = 15, units = "cm")
 ```
 
@@ -680,8 +681,8 @@ d_index[[5]] <- d_index_calculation(graph = river_graph,
                                     param = 0.8,
                                     parallel = FALSE) 
 
-# 6: Population Connectivity Index for highland fish
-lab_d_index[[6]] <- "PCI highland fish"
+# 6: Population Connectivity Index for upland fish
+lab_d_index[[6]] <- "PCI upland fish"
 letter_d_index[[6]] <- "F"
 d_index[[6]] <- d_index_calculation(graph = river_graph,
                                     barriers_metadata = barriers_metadata, 
@@ -703,9 +704,9 @@ d_index[[7]] <- d_index_calculation(graph = river_graph,
                                     param_d = 3,
                                     parallel = FALSE)
 
-# 8: Population Connectivity Index for highland passive drifter
+# 8: Population Connectivity Index for upland passive drifter
 ## note that units of param_d must be consistent with length field (10s of km)
-lab_d_index[[8]] <- "PCI highland passive"
+lab_d_index[[8]] <- "PCI upland passive"
 letter_d_index[[8]] <- "H"
 d_index[[8]] <- d_index_calculation(graph = river_graph,
                                     barriers_metadata = barriers_metadata, 
@@ -718,7 +719,7 @@ d_index[[8]] <- d_index_calculation(graph = river_graph,
 
 ```
 
-Resulting maps can be plotted to visually compare the results. For comparisons between different indices, barriers ranks are plotted. The lowest rank is the total number of barriers (ca. 80).
+Resulting maps can be plotted to visually compare the results. For comparisons between different indices, barriers ranks are plotted. The lowest rank is the total number of barriers (ca. 80). Barriers with higher ranks should be prioritized for passability improvement.
 ```{r d index plot, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize empty list
 plot_list <- list()
@@ -780,7 +781,8 @@ colnames(d_index_chart) <- c(letter_d_index[[1]], letter_d_index[[2]], letter_d_
 cor(d_index_chart, method = "spearman")
 corrmorant::corrmorant(d_index_chart, corr_method = "spearman", style = "binned")+
   theme(legend.position = "bottom") +
-  scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1))
+  scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1)) +
+  theme(axis.text = element_text(size=5))
 ggsave("Figures/ranking comparison.jpeg",  width = 15, height = 15, units = "cm")
 ```
 
