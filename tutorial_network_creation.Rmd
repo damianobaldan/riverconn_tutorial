@@ -787,7 +787,7 @@ for (i in 1:length(d_index)) {
 
 plot_list[[length(d_index)+1]] <- legend
 
-plot_final <- ggpubr::ggarrange( plotlist = plot_list )
+plot_final <- ggpubr::ggarrange( plotlist = plot_list, ncol = 3)
 plot_final
 
 ggsave(plot = plot_final, "Figures/barriers_prioritization.jpeg",  
