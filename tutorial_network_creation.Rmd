@@ -207,7 +207,7 @@ dams_snapped_reduced <-
 st_distance(dams_snapped_reduced, shape_river_simple) %>% sum
 ```
 
-The final step is to check if two dams were snapped in the same geographic point, and to assign passablity values to the obtained snapped points. Here, uniform (not dam-dependent) passabilities were assigned: 0.8 for downstream passability, and 0.1 for upstream passability. An id is assigned to each of the geographic points.
+The final step is to check if two dams were snapped in the same geographic point, and to assign passablity values to the obtained snapped points. Here, uniform (not dam-dependent) passabilities were assigned: 0.8 for downstream passability, and 0.1 for upstream passability. An id is assigned to each of the geographic points. Finally, each dam is assigned the value of the upstream area with a spatial join with the original river shapefile (HydroSheds expresses the upstream area as number of cells).
 ```{r create dams points passability, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 dams_snapped_reduced_joined <- dams_snapped_reduced %>%
   mutate(cluster =
@@ -218,10 +218,15 @@ dams_snapped_reduced_joined <- dams_snapped_reduced %>%
   ungroup() %>%
   mutate(id_dam = as.character(1:nrow(.)), pass_u = 0.1, pass_d = 0.8) %>%
   as.data.frame %>%
-  st_as_sf()
+  st_as_sf() %>%
+  st_join(., shape_river_small, join = st_is_within_distance, dist = 10 ) %>% 
+  group_by(id) %>%
+  slice(which.max(UP_CELLS)) %>% 
+  ungroup()
+  
 ```
 
-The function `headwaters_dam` (see Appendix B) can identify dams that are located in the headwaters, meaning that they do not have any river network segment upstream. When no upstream segment is present, the network can not be created (because the dam would be an edge without an upstream vertex). By calling the flag_headwater you should get a column with only "FALSE" statements. 
+The function `headwaters_dam` (see Appendix B) can identify dams that are located in the headwaters, meaning that they do not have any river network segment upstream. When no upstream segment is present, the network can not be created (because the dam would be an edge without an upstream vertex). When calling the flag_headwater you should get a column with only "FALSE" statements. 
 ```{r headwaters dams check, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 headwaters_checking <- headwaters_dam(dams_snapped_reduced_joined, shape_river_simple)
 head(headwaters_checking$flag_headwater)
@@ -241,7 +246,7 @@ ggplot() +
 ```
 
 ## 2.4 Shapefile slicing
-The last step is to slice the river shapefile based on both the position of dams and confluences. First a combined 'junctions' dataset is created, then the function `lwgeom::st_split` is applied again. note that the confluences are assigned NA values to the fields present in the dams shapefile. Note also that in the river network shapefile, the field length is calculated.
+The last step is to slice the river shapefile based on both the position of dams and confluences. First a combined 'junctions' dataset is created, then the function `lwgeom::st_split` is applied again. note that the confluences are assigned NA values to the fields present in the dams shapefile. Note also that in the river network shapefile, the field length is calculated. Finally, a spatial join is performed with the original river shapefile to assign to each reach the corresponding upstream area. Note that HydroSheds expresses the upstream area in terms of cells (approximate cell width at this latitude is 450 m).
 ```{r join dams confluences shapefiles, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Create junction point shapefile
 network_links <- rbind(
@@ -259,10 +264,15 @@ river_net_simplified <- lwgeom::st_split(shape_river_simple, network_links) %>%
   st_collection_extract(.,"LINESTRING") %>%
   data.frame(EdgeID = 1:length(.), geometry = .) %>%
   st_as_sf() %>%
-  mutate(length = st_length(.))
+  mutate(length = st_length(.)) %>%
+  st_join(., shape_river_small, join = st_is_within_distance, dist = 0.01 ) %>% 
+  group_by(EdgeID) %>%
+  slice(which.max(UP_CELLS)) %>% 
+  ungroup()
+
 ```
 
-A plot can reveal if the process was succesful
+A plot can reveal if the process was successful.
 ```{r plot dams joins, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 ggplot() +
   coord_fixed() +
@@ -538,6 +548,17 @@ index[[8]] <- index_calculation(graph = river_graph,
                                 index_mode = "from")
 ```
 
+A quick check on the variation range.
+```{r index spreading, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+
+data.frame("index" = do.call(rbind, lab_index),
+           "min" = t(sapply(index, sapply, min))[,4], 
+           "mean" = t(sapply(index, sapply, mean))[,4],
+           "max" = t(sapply(index, sapply, max))[,4] )
+
+```
+
+
 Resulting maps can be plotted to visually compare the results. For comparisons between different indices, reach ranks are plotted. The lowest rank is the total number of reaches (ca. 650). Reaches with higher rankings offer higher potential for being dispersal sources.
 ```{r index plot, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize empty list
@@ -599,7 +620,8 @@ cor(d_index_chart, method = "spearman")
 corrmorant::corrmorant(d_index_chart, corr_method = "spearman", style = "binned")+
   theme(legend.position = "bottom") +
   scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1)) +
-  theme(axis.text = element_text(size=5))
+  theme(axis.text = element_text(size=5),
+        axis.text.x = element_text(angle = 45) )
 ggsave("Figures/ranking_habitat_comparison.jpeg",  width = 15, height = 15, units = "cm")
 ```
 
@@ -717,6 +739,17 @@ d_index[[8]] <- d_index_calculation(graph = river_graph,
                                     param_d = 3,
                                     parallel = FALSE)
 
+# 9: Catchment Area Fragmentation Index
+## note that units of param_d must be consistent with length field (10s of km)
+lab_d_index[[9]] <- "CAFI"
+letter_d_index[[9]] <- "I"
+d_index[[9]] <- d_index_calculation(graph = river_graph,
+                                    barriers_metadata = barriers_metadata, 
+                                    weight = "UP_CELLS", 
+                                    dir_distance_type  = "symmetric",
+                                    B_ij_flag = FALSE,
+                                    parallel = FALSE)
+
 ```
 
 Resulting maps can be plotted to visually compare the results. For comparisons between different indices, barriers ranks are plotted. The lowest rank is the total number of barriers (ca. 80). Barriers with higher ranks should be prioritized for passability improvement.
@@ -782,7 +815,8 @@ cor(d_index_chart, method = "spearman")
 corrmorant::corrmorant(d_index_chart, corr_method = "spearman", style = "binned")+
   theme(legend.position = "bottom") +
   scale_color_viridis(name = "Correlation", option = "E", direction = -1, limits = c(-1, 1)) +
-  theme(axis.text = element_text(size=5))
+  theme(axis.text = element_text(size=5),
+        axis.text.x = element_text(angle = 45))
 ggsave("Figures/ranking comparison.jpeg",  width = 15, height = 15, units = "cm")
 ```
 
