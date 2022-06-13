@@ -778,16 +778,16 @@ for (i in 1:length(d_index)) {
     theme(legend.position = "bottom")+
     ggtitle(paste0(letter_d_index[[i]], ") ", lab_d_index[[i]]))
     
-  legend <- cowplot::get_legend(plot_iter)
+  # legend <- cowplot::get_legend(plot_iter)
   
-  plot_list[[i]] <- plot_iter + 
-    theme(legend.position = "none")
+  plot_list[[i]] <- plot_iter #+ theme(legend.position = "none")
 
 }
 
-plot_list[[length(d_index)+1]] <- legend
+# plot_list[[length(d_index)+1]] <- legend
 
-plot_final <- ggpubr::ggarrange( plotlist = plot_list, ncol = 3)
+plot_final <- ggpubr::ggarrange( plotlist = plot_list, 
+                                 common.legend = TRUE, legend = "bottom")
 plot_final
 
 ggsave(plot = plot_final, "Figures/barriers_prioritization.jpeg",  
@@ -804,11 +804,12 @@ d_index_chart <- data.frame("d_i_1" = d_index[[1]]$d_index,
                             "d_i_5" = d_index[[5]]$d_index,
                             "d_i_6" = d_index[[6]]$d_index,
                             "d_i_7" = d_index[[7]]$d_index,
-                            "d_i_8" = d_index[[8]]$d_index)
+                            "d_i_8" = d_index[[8]]$d_index,
+                            "d_i_9" = d_index[[9]]$d_index)
 
 colnames(d_index_chart) <- c(letter_d_index[[1]], letter_d_index[[2]], letter_d_index[[3]], 
                              letter_d_index[[4]], letter_d_index[[5]], letter_d_index[[6]],
-                             letter_d_index[[7]], letter_d_index[[8]])
+                             letter_d_index[[7]], letter_d_index[[8]], letter_d_index[[9]])
 
 # Spearman corrlations between rankings calculated with different priorities
 cor(d_index_chart, method = "spearman")
