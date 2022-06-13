@@ -548,7 +548,7 @@ index[[8]] <- index_calculation(graph = river_graph,
                                 index_mode = "from")
 ```
 
-A quick check on the variation range.
+A quick check to the variation range.
 ```{r index spreading, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 
 data.frame("index" = do.call(rbind, lab_index),
@@ -749,6 +749,16 @@ d_index[[9]] <- d_index_calculation(graph = river_graph,
                                     dir_distance_type  = "symmetric",
                                     B_ij_flag = FALSE,
                                     parallel = FALSE)
+
+```
+
+A quick check to the variation range of CCI for the baseline.
+```{r d_index spreading, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+
+data.frame("Baseline CCI" = do.call(rbind, lab_d_index),
+           "min" = t(sapply(d_index, sapply, min))[,4], # baseline in is column 4
+           "mean" = t(sapply(d_index, sapply, mean))[,4],
+           "max" = t(sapply(d_index, sapply, max))[,4] )
 
 ```
 

@@ -2372,11 +2372,11 @@ that keeps the attributes present in the shapefile and in the
 junction.</p>
 <pre class="r"><code># Check igraph object
 river_graph
-## IGRAPH c5087f8 DN-- 650 649 -- 
+## IGRAPH ce97c0d DN-- 650 649 -- 
 ## + attr: name (v/c), length (v/n), ARCID (v/n), UP_CELLS (v/n), alt
 ## | (v/n), type (e/c), id_links (e/n), id_barrier (e/c), pass_u (e/n),
 ## | pass_d (e/n)
-## + edges from c5087f8 (vertex names):
+## + edges from ce97c0d (vertex names):
 ##  [1] 552-&gt;521 520-&gt;521 521-&gt;522 534-&gt;522 642-&gt;643 646-&gt;643 639-&gt;638 647-&gt;639
 ##  [9] 640-&gt;639 641-&gt;638 635-&gt;636 645-&gt;636 632-&gt;631 631-&gt;628 636-&gt;628 630-&gt;632
 ## [17] 644-&gt;632 628-&gt;627 627-&gt;629 634-&gt;633 633-&gt;629 624-&gt;626 621-&gt;624 596-&gt;624
@@ -2626,7 +2626,7 @@ index[[8]] &lt;- index_calculation(graph = river_graph,
                                 param_d = 3,
                                 index_type = &quot;reach&quot;,
                                 index_mode = &quot;from&quot;)</code></pre>
-<p>A quick check on the variation range.</p>
+<p>A quick check to the variation range.</p>
 <pre class="r"><code>
 data.frame(&quot;index&quot; = do.call(rbind, lab_index),
            &quot;min&quot; = t(sapply(index, sapply, min))[,4], 
@@ -2866,6 +2866,22 @@ d_index[[9]] &lt;- d_index_calculation(graph = river_graph,
                                     dir_distance_type  = &quot;symmetric&quot;,
                                     B_ij_flag = FALSE,
                                     parallel = FALSE)</code></pre>
+<p>A quick check to the variation range of CCI for the baseline.</p>
+<pre class="r"><code>
+data.frame(&quot;Baseline CCI&quot; = do.call(rbind, lab_d_index),
+           &quot;min&quot; = t(sapply(d_index, sapply, min))[,4], # baseline in is column 4
+           &quot;mean&quot; = t(sapply(d_index, sapply, mean))[,4],
+           &quot;max&quot; = t(sapply(d_index, sapply, max))[,4] )
+##               Baseline.CCI                 min        mean                 max
+## 1            Symmetric DCI  0.0896918113294804 0.091271787    0.12475444331471
+## 2           Asymmetric DCI   0.249775942008399 0.252136725   0.288611621932088
+## 3            Symmetric IIC 0.00848839303677673 0.008499194 0.00854219578027038
+## 4 IIC with uniform weights 0.00913609467455621 0.009158738 0.00925917159763314
+## 5         PCI lowland fish  0.0187318308447781 0.018808560  0.0197069606058962
+## 6          PCI upland fish  0.0150590660527446 0.015106542  0.0158664049136103
+## 7      PCI lowland passive 0.00477871560840509 0.004783029 0.00479896739286735
+## 8       PCI upland passive  0.0074740775630229 0.007478620 0.00753052597158481
+## 9                     CAFI   0.202825794756172 0.205951055   0.298624570467645</code></pre>
 <p>Resulting maps can be plotted to visually compare the results. For
 comparisons between different indices, barriers ranks are plotted. The
 lowest rank is the total number of barriers (ca. 80). Barriers with
