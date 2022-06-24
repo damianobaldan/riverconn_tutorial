@@ -73,7 +73,11 @@ The construction of the `igraph` object requires at least some information on th
 
 The river network shapefile can be retrieved from [HydroSHEDS](https://www.hydrosheds.org/page/overview), a global river network geo-referenced dataset derived from spaceborn elevation data. HydroSHEDS is widely used for global to regional analyses (Lehner et al., 2008). Data can be downloaded from [here](https://www.hydrosheds.org/downloads). River networks shapefiles (HydroRIVERS) are available at two different resolutions (15 and 30 sec). Basins and catchments shapefiles (HydroBASINS) are also available with 12 detail levels (Lehner et al., 2013). The Ebro catchment border can be selected from the polygons available in the HydroBASINS layer and the corresponding network can be extracted from the HydroSHEDS layer.
 
-The shapefile with the geographic position of the dams was obtained from the Ebro river public Geographic Information System [CHE website](http://iber.chebro.es/geoportal/). 
+Other options are available for catchments and rivers. [The European Catchments and Rivers network system](https://www.eea.europa.eu/data-and-maps/data/european-catchments-and-rivers-network) (ECRINS) dataset provides good quality data covering most of Europe. The ECRINS data for rivers are structured with segments and nodes, making the creation of a network quite straight-forward. ECRINS is more detailed than HydroRIVERS. Local sources (e.g. hydrography layers from local authorities) are also generally available, but particular care should be taken in preprocessing to correct the presence of disconnected segments and loops in the shapefile. 
+
+The shapefile with the geographic position of the dams was obtained from the Ebro river public Geographic Information System [CHE website](http://iber.chebro.es/geoportal/).
+
+The [AMBER](https://www.nature.com/articles/s41586-020-3005-2) dataset described in Belletti et al. (2020) contains barriers data compiled from different national and international sources. Metadata on barriers type (weir, dam, culvert, etc) and height are available but most barriers are unclassified.
 
 The obtained files can be imported in R (note that the river shapefile "Ebre_riv_modif.shp" has been sligtly modified from the original hydrosheds shapefile -see next sections on the checks carried out on the shapefiles. The original shapefile is saved in the Ebro_shape/ folder for comparison). 
 ```{r read shapes , message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
