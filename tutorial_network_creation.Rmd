@@ -136,7 +136,7 @@ ggplot() +
 
 ## 2.2 Confluences processing
 
-Every river network contains confluences, i.e. points where two reaches merge into one. In the river graph defined above, confluences are edges (links) between nodes. To define confluences the pruned river shapefile is first simplified and its geometry is casted to "POINT".
+Every river network contains confluences, i.e. points where two reaches merge into one. In the river graph defined above, confluences are edges (links) between nodes. To define confluences the pruned river shapefile is first simplified and its geometry is casted to "POINT". Note that for large shapefiles the function `rgeos::gLineMerge` might be more efficient than `sf::st_union`.
 ```{r simplify cast river network, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Simplify river shapefile
 shape_river_simple <- shape_river_small %>%
