@@ -10,6 +10,10 @@ knit: (function(input_file, encoding) {
  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
 
+# Content
+
+This document is meant as a tutorial to assist in the process of creating a river network object from widely available geodatasets. The network-based description of river systems greatly facilitates the computation of indices to assess riverscape connectivity and fragmentation. In this tutorial, the package [riverconn](https://cran.r-project.org/package=riverconn) is used for the calculation of such indices. You can learn more on the package functionalities and architecture by reading the [Baldan et al. (2022)](https://doi.org/10.1016/j.envsoft.2022.105470) paper. If you use this tutorial, do not forget to cite that paper. 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -20,7 +24,7 @@ This document is a step-by-step guide to create an `igraph` object starting from
 
 The source code used to generate this tutorial is available on [github](https://github.com/damianobaldan/riverconn_tutorial) in the file `tutorial_network_creation.Rmd`; additional functions used in the tutorial are stored in the file `functions_network_creation.R`.
 
-After this tutorial is completed, the resulting  `igraph` object is meant to be used as input to functions to assess riverscape fragmentation. The [`riverconn`](https://github.com/damianobaldan/riverconn) package allows implements a lot of such indices.  Most graph theory-based indices to asses fragmentation (see Jumani et al., 2020 for a review) conceptualize the riverscape as a graph where vertices (nodes) represent reaches, i.e. distintictly separated river sections; while edges (links) represent splitting objects, such as confluences (where two reaches join), barriers (items that disrupt the longitudial connectivity of the river), or habitat patches boundaries (borders between sections of the river with relatively uniform habitat conditions). This tutorial focuses on barriers (dams), but in principle other fragmentation inputs can be dealt with similarly.
+After this tutorial is completed, the resulting  `igraph` object is meant to be used as input to functions to assess riverscape fragmentation. The `riverconn` package (available on [CRAN](https://cran.r-project.org/package=riverconn) and on [github](https://github.com/damianobaldan/riverconn)) allows implements a lot of such indices.  Most graph theory-based indices to asses fragmentation (see Jumani et al., 2020 for a review) conceptualize the riverscape as a graph where vertices (nodes) represent reaches, i.e. distintictly separated river sections; while edges (links) represent splitting objects, such as confluences (where two reaches join), barriers (items that disrupt the longitudial connectivity of the river), or habitat patches boundaries (borders between sections of the river with relatively uniform habitat conditions). This tutorial focuses on barriers (dams), but in principle other fragmentation inputs can be dealt with similarly.
 
 The [`igraph`](https://cran.r-project.org/web/packages/igraph/index.html) package implements routines for graphs and network analysis. It can handle large graphs very well and provides functions for generating random and regular graphs, graph visualization, centrality methods and much more. The packages allows for easy [construction](https://igraph.org/r/doc/aaa-igraph-package.html) of `igraph` objects based on symbolic description of edges and vertices, edges and vertices lists, or adjacency matrices. The book [Statistical Analysis of Network Data with R by Kolaczyk and Csardi (2014)](https://link.springer.com/book/10.1007%2F978-3-030-44129-6) offers a comprehensive tutorial on the possibilities offered by the `igraph` package, including network data manipulation and visualization, descriptive analysis of network graphs, mathematical and statistical modeling of graphs, and network topology inference.
 
@@ -328,6 +332,7 @@ ggplot() +
 
 # 3. Creation of the `igraph` object
 The `igraph` object can be created using the functions `get_outlet` and `create_network` (see Appendix B). The function `get_outlet` identifies the outlet of the catchment based on the intersection between the river network shapefile and the catchment border. This function is meant to be used with hydroSHEDS-derived data, but the identification can be done manually on any GIS software. The function `create_network` uses the outlet information, the properly sliced river network shapefile and the junctions shapefile. Note that for using this function the fields with barriers informations must be named 'id_barrier', 'pass_u' and 'pass_d'.
+
 ```{r create igraph object, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 outlet <- get_outlet(river_net_simplified, shape_basin, distance = 1)
 outlet
@@ -448,6 +453,8 @@ Here some example of indices for river network connectivity applied to river gra
 
 ## 4.1 Reach-scale indices
 The funtion `index_calculation` from the [`riverconn`](https://github.com/damianobaldan/riverconn) package is used to calculate reach-scale connectivity indices (RCI). Refer to the package vignette for details on the calculation of the indices. For comparison purposes, different indices are calculated: (A) Dendritic connectivity index with symmetric dams passabilities; (B) Dendritic connectivity index with asymmetric dams passabilities; (C) Integral Index of connectivity (dams are not passable and a threshold on dispersal distance is used); (D) Integral Index of connectivity with uniform weights; (E) lowland-preferring organisms with active aquatic dispersal (e.g. fish), (F) upland organisms with active aquatic dispersal (e.g. fish), (G) lowland-preferring organism with passive aquatic dispersal (e.g., invertebrate larval stage), (H) upland organism with passive aquatic dispersal (e.g., invertebrate larval stage, bivalve). Note that for all those indices, the option `index_mode = "from"` was used, meaning paths exiting from the node are considered for calculating the coincidence probabilities. Thus, such indices can be interpreted as the potential for each node to support dispersal of organisms to the whole river network. An alternative could be to specify `index_mode = "to"`. In this case, only incoming links are considered for the calculation of the index, yielding a prioritization based on the node potential for recolonization. Note that when symmetric dispersal and symmetric barriers passability are used, the two indices should overlap.
+
+Before calculating indices, you should consider carefully the size of the network and its complexity. The `index_calculation` function might fail for large networks on comuters with limited available RAM because R would not be able to allocate enough memory to efficiently store the $n * n$ matrices generated in the process. For example, the function was failing with a network size of 10^5 nodes on a computer with 8 GB RAM, but was succesfull on a computer with 32 GB RAM. Few tests might be needed to ballance complexity and computational resources.
 
 ```{r index calculation, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Initialize list where to store all the index calculation outputs
@@ -849,6 +856,8 @@ devtools::session_info()
 
 \newpage
 # References and key literature
+
+Baldan, D., Cunillera-Montcusí, D., Funk, A., & Hein, T. (2022). ‘Riverconn’: An R package to assess river connectivity indices. Environmental Modelling & Software, 105470.
 
 Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
 
