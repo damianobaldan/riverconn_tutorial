@@ -1923,16 +1923,17 @@ functions used in the tutorial are stored in the file
 <code>functions_network_creation.R</code>.</p>
 <p>After this tutorial is completed, the resulting <code>igraph</code>
 object is meant to be used as input to functions to assess riverscape
-fragmentation. The <code>riverconn</code> package (available on <a href="https://cran.r-project.org/package=riverconn">CRAN</a> and on <a href="https://github.com/damianobaldan/riverconn">github</a>) allows
-implements a lot of such indices. Most graph theory-based indices to
-asses fragmentation (see Jumani et al., 2020 for a review) conceptualize
-the riverscape as a graph where vertices (nodes) represent reaches,
-i.e. distintictly separated river sections; while edges (links)
-represent splitting objects, such as confluences (where two reaches
-join), barriers (items that disrupt the longitudial connectivity of the
-river), or habitat patches boundaries (borders between sections of the
-river with relatively uniform habitat conditions). This tutorial focuses
-on barriers (dams), but in principle other fragmentation inputs can be
+fragmentation. The <code>riverconn</code> package (available on <a href="https://cran.r-project.org/package=riverconn">CRAN</a> and on <a href="https://github.com/damianobaldan/riverconn">github</a>) allows for
+the calculation of many fragmentation/connectivity indices. Most graph
+theory-based indices to asses fragmentation and connectivity of rivers
+(see Jumani et al., 2020 for a review) conceptualize the riverscape as a
+graph where vertices (nodes) represent reaches, i.e. distintictly
+separated river sections; while edges (links) represent splitting
+objects, such as confluences (where two reaches join), barriers (items
+that disrupt the longitudial connectivity of the river), or habitat
+patches boundaries (borders between sections of the river with
+relatively uniform habitat conditions). This tutorial focuses on
+barriers (dams), but in principle other fragmentation inputs can be
 dealt with similarly.</p>
 <p>The <a href="https://cran.r-project.org/web/packages/igraph/index.html"><code>igraph</code></a>
 package implements routines for graphs and network analysis. It can
@@ -2403,11 +2404,11 @@ that keeps the attributes present in the shapefile and in the
 junction.</p>
 <pre class="r"><code># Check igraph object
 river_graph
-## IGRAPH 93c64c6 DN-- 650 649 -- 
+## IGRAPH 394919c DN-- 650 649 -- 
 ## + attr: name (v/c), length (v/n), ARCID (v/n), UP_CELLS (v/n), alt
 ## | (v/n), type (e/c), id_links (e/n), id_barrier (e/c), pass_u (e/n),
 ## | pass_d (e/n)
-## + edges from 93c64c6 (vertex names):
+## + edges from 394919c (vertex names):
 ##  [1] 552-&gt;521 520-&gt;521 521-&gt;522 534-&gt;522 642-&gt;643 646-&gt;643 639-&gt;638 647-&gt;639
 ##  [9] 640-&gt;639 641-&gt;638 635-&gt;636 645-&gt;636 632-&gt;631 631-&gt;628 636-&gt;628 630-&gt;632
 ## [17] 644-&gt;632 628-&gt;627 627-&gt;629 634-&gt;633 633-&gt;629 624-&gt;626 621-&gt;624 596-&gt;624
