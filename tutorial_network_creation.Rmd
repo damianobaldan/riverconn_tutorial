@@ -77,7 +77,7 @@ The construction of the `igraph` object requires at least some information on th
 
 The river network shapefile can be retrieved from [HydroSHEDS](https://www.hydrosheds.org/page/overview), a global river network geo-referenced dataset derived from spaceborn elevation data. HydroSHEDS is widely used for global to regional analyses (Lehner et al., 2008). Data can be downloaded from [here](https://www.hydrosheds.org/downloads). River networks shapefiles (HydroRIVERS) are available at two different resolutions (15 and 30 sec). Basins and catchments shapefiles (HydroBASINS) are also available with 12 detail levels (Lehner et al., 2013). The Ebro catchment border can be selected from the polygons available in the HydroBASINS layer and the corresponding network can be extracted from the HydroSHEDS layer.
 
-Other options are available for catchments and rivers. [The European Catchments and Rivers network system](https://www.eea.europa.eu/data-and-maps/data/european-catchments-and-rivers-network) (ECRINS) dataset provides good quality data covering most of Europe. The ECRINS data for rivers are structured with segments and nodes, making the creation of a network quite straight-forward. ECRINS is more detailed than HydroRIVERS. Local sources (e.g. hydrography layers from local authorities) are also generally available, but particular care should be taken in preprocessing to correct the presence of disconnected segments and loops in the shapefile. 
+Other options are available for catchments and rivers. [The European Catchments and Rivers network system](https://www.eea.europa.eu/data-and-maps/data/european-catchments-and-rivers-network) (ECRINS) dataset provides good quality data covering most of Europe. The ECRINS data for rivers are structured with segments and nodes, making the creation of a network quite straight-forward. ECRINS is more detailed than HydroRIVERS. The recent [Hydrography90m](https://doi.org/10.5194/essd-14-4525-2022) dataset can also be used. Local sources (e.g. hydrography layers from local authorities) are also generally available, but particular care should be taken in preprocessing to correct the presence of disconnected segments and loops in the shapefile. 
 
 The shapefile with the geographic position of the dams was obtained from the Ebro river public Geographic Information System [CHE website](http://iber.chebro.es/geoportal/).
 
@@ -104,7 +104,10 @@ Some data preprocessing is needed to prepare the input data for network construc
 
 ## 2.1 Shapefiles processing
 
-Shapefiles derived from the HydroRIVER layer have a high detail level: a network with a high detail level will have a large amount of nodes and links, making the algorithms for network analysis slow. Thus it makes sense to reduce the size of the network by pruning the most upstream reaches. The information on the upstream area (number of DEM raster cells) is stored in the field 'UP_AREA'. Knowing the HydroSHEDS resolution (data used here have a resoluton of 15 seconds, corresponding to 450 meters at this latitude), a threshold on upstream area can be decided.
+Shapefiles derived from the HydroRIVERS layer have a high detail level: a network with a high detail level will have a large amount of nodes and links, making the algorithms for network analysis slow. Thus it makes sense to reduce the size of the network by pruning the most upstream reaches. The information on the upstream area (number of DEM raster cells) is stored in the field 'UP_AREA'. Knowing the HydroSHEDS resolution (data used here have a resoluton of 15 seconds, corresponding to 450 meters at this latitude), a threshold on upstream area can be decided.
+
+Note that different HydroRIVERS versions are available. This tutorial uses HydroRIVERS v1.0, where the field UP_CELLS contains the number of upstream cells. In more recent versions of HydroRIVERS (> v1.1), the field UP_CELLS is not available and different fields should be used (e.g. ORD_STRA, ORD_CLAS, ORD_FLOW). Check the dataset [documentation](https://www.hydrosheds.org/products/hydrorivers) for further details.
+
 ```{r prune HydroRIVERS network based on upstream area, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 # Set threshold
 threshold = 500
@@ -331,7 +334,11 @@ ggplot() +
 ```
 
 # 3. Creation of the `igraph` object
-The `igraph` object can be created using the functions `get_outlet` and `create_network` (see Appendix B). The function `get_outlet` identifies the outlet of the catchment based on the intersection between the river network shapefile and the catchment border. This function is meant to be used with hydroSHEDS-derived data, but the identification can be done manually on any GIS software. The function `create_network` uses the outlet information, the properly sliced river network shapefile and the junctions shapefile. Note that for using this function the fields with barriers informations must be named 'id_barrier', 'pass_u' and 'pass_d'.
+The `igraph` object can be created using the functions `get_outlet` and `create_network` (see Appendix B). The function `get_outlet` identifies the outlet of the catchment based on the intersection between the river network shapefile and the catchment border. This function is meant to be used with hydroSHEDS-derived data, but the identification can be done manually on any GIS software. The function `create_network` uses the outlet information, the properly sliced river network shapefile and the junctions shapefile.
+
+It is important to note that: 
+* for using this function the fields with barriers informations must be named 'id_barrier', 'pass_u' and 'pass_d';
+* in case several fields are available in the `river_net_simplified` and  `network_links` shapefiles, they should have fairly different names (e.g. fields named `elevation` and `elev` should not be present, because a partial match based on field names is done internally in the `create_network` function). The functions `dplyr::select` and `dplyr::rename` can be used to retain only the few fields that are relevant for the next steps.
 
 ```{r create igraph object, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 outlet <- get_outlet(river_net_simplified, shape_basin, distance = 1)
