@@ -196,10 +196,6 @@ ggplot() +
   labs(caption = "Hollow points are the position of the junctions")
 ```
 
-Sometimes, the HydroSHEDS-derived shapefiles might have confluences where four or more rivers join. Such type of confluences can cause problems in the next steps. The function `multiple_confluences` (Appendix B) identifies such problematic confluences so that they can be corrected in a GIS environment. The correction should consists in editing the river shapefile to move re-locate one of the reaches (either upstream or downstream) on the intersections that have more than three reaches (this can be easily attained once these intersections are located by the following function). Once edited, re-run the script and check again that there are no more four reaches confluences.   
-```{r check multiple confluences, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
-multiple_confluences(shape_river_simple)
-```
 
 ## 2.3 Dams processing
 Dams are processed in a way similar to confluences. The general idea is to obtain a shapefile that is sliced in points where dams or confluences are located. However, dams shapefiles require special care in the processing of the data. First, dams need to be snapped to the river network. Second, dams that are too far away from the river network need to be removed from the analysis because they are probably located in smaller streams that were removed beforehand.
@@ -294,6 +290,11 @@ ggplot() +
   theme(legend.position = "bottom")+
   ggspatial::annotation_north_arrow(location = "br")+
   ggspatial::annotation_scale(location = "bl", style = "ticks")
+```
+
+Sometimes, the HydroSHEDS-derived shapefiles might have confluences where four or more rivers join. Such type of confluences can cause problems in the next steps. The function `multiple_confluences` (Appendix B) identifies such problematic confluences so that they can be corrected in a GIS environment. The correction should consists in editing the river shapefile to move re-locate one of the reaches (either upstream or downstream) on the intersections that have more than three reaches (this can be easily attained once these intersections are located by the following function). Once edited, re-run the script and check again that there are no more four reaches confluences.   
+```{r check multiple confluences, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
+multiple_confluences(river_net_simplified)
 ```
 
 ## 2.5 Adding additional attributes to the river shapefile
