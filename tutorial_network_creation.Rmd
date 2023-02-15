@@ -92,7 +92,7 @@ shape_dams <- st_read("Ebre_Dams/Embalses/Embalses.shp")
 
 ## 1.4 Functions to support data processing
 
-Some custom functions were developed and were used in the data processing. The source code and the documentation for these functions is found in Appendix B. Before starting, make sure those functions are loaded in the global environment: `get_outlet`, `create_network`, `snap_to_river`, `headwaters_dam`, `multiple_confluences`.
+Some custom functions were developed and were used in the data processing. The source code and the documentation for these functions is found in Appendix B. Before starting, make sure those functions are loaded in the global environment: `get_outlet`, `create_network`, `snap_to_river`, `headwaters_dam`, `multiple_confluences`, `gaps_detection`.
 
 ```{r source processing funs ,echo = FALSE}
 source("functions_network_creation.R")
@@ -292,7 +292,10 @@ ggplot() +
   ggspatial::annotation_scale(location = "bl", style = "ticks")
 ```
 
-Sometimes, the HydroSHEDS-derived shapefiles might have confluences where four or more rivers join. Such type of confluences can cause problems in the next steps. The function `multiple_confluences` (Appendix B) identifies such problematic confluences so that they can be corrected in a GIS environment. The correction should consists in editing the river shapefile to move re-locate one of the reaches (either upstream or downstream) on the intersections that have more than three reaches (this can be easily attained once these intersections are located by the following function). Once edited, re-run the script and check again that there are no more four reaches confluences.   
+Sometimes, the HydroSHEDS-derived shapefiles might have confluences where four or more rivers join. Such type of confluences can cause problems in the next steps. The function `multiple_confluences` (Appendix B) identifies such problematic confluences so that they can be corrected in a GIS environment. The correction consists in editing the river shapefile to move re-locate one of the reaches (either upstream or downstream) on the intersections that have more than three reaches (this can be easily achieved once these intersections are located by the following
+function). Another common problem in HydroSHEDS-derived shapefiles is the presence of gaps between segments. This issue can cause problems in the `network_creation` function, which expects a shapefile with no gaps. The function `gaps_detection` (Appendix B) can be used to detect such problematic points in the shapefile. 
+
+Once edited, re-run the script and check again that there are no more four reaches confluences.   
 ```{r check multiple confluences, message = FALSE, collapse = TRUE, width = 60, warning = FALSE}
 multiple_confluences(river_net_simplified)
 ```

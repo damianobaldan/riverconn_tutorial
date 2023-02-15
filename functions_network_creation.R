@@ -305,7 +305,54 @@ multiple_confluences <- function(shape){
 }
 
 
-
+#' Detects gaps in the river network polyline that might cause the function network_creation to fail
+#'
+#' @param shape the river network shapefile to be used as input to the network_creation function
+#'
+#' @return a point shapefile with the position of the gaps in the river network
+#'
+gaps_detection <- function(shape){
+  
+  # Break shapefile at points
+  river_to_points <- shape %>%
+    st_as_sf %>%
+    st_cast("POINT") %>%
+    mutate(id = 1:nrow(.))
+  
+  # Retain all confluences, both good and 'broken' ones
+  joins_selection <- river_to_points %>%
+    st_is_within_distance(dist = 0.0001) %>%
+    Filter(function(x){length(x) > 2 }, .) %>%
+    lapply(., FUN = min) %>%
+    unlist() %>%
+    unique()
+  
+  all_river_joins <- river_to_points %>%
+    filter(id %in% joins_selection)
+  
+  # Select casted points that are next to each confluence
+  close_points <- st_is_within_distance(all_river_joins, river_to_points, dist = 1)
+  
+  # Loop over each points triplet and calculate the distance
+  out_dist <- list()
+  for (i in 1:length(close_points)){
+    out_dist[[i]] <- river_to_points %>%
+      filter(id %in% close_points[[i]]) %>%
+      st_distance() %>%
+      max()
+  }
+  
+  # Problematic points are extracted
+  problematic_points <- close_points[which(out_dist > 0)] %>%
+    unlist() %>%
+    unique()
+  
+  points_out <- river_to_points %>%
+    filter(id %in% problematic_points)
+  
+  return(points_out)
+  
+}
 
 
 
