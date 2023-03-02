@@ -20,12 +20,13 @@ get_outlet <- function(river_network, catchment_mask, distance) {
     match(TRUE, .)
 }
 
-#' Function to create the river network with the right directionality
+#' Function to create an object of class igraph with the river network attributes and
+#' the right directionality
 #'
 #' @param network_links a point shapefile containing the river joins and dams
 #' (must be of class sf)
 #' @param river_net_simplified a polyline shapefile containing the river
-#' network already sliced (must be of class sf)
+#' network already sliced (must be of class sf). Must contain an ID column named 'NodeID'.
 #' @param outlet integer indicating the reach in river_net_simplified that is
 #' the outlet of the catchment
 #'
@@ -82,7 +83,7 @@ create_network <- function(network_links, river_net_simplified, outlet) {
   # Create vertices vector
   vertices <- river_net_simplified %>% 
     st_drop_geometry %>%
-    rename(name = EdgeID) %>%
+    mutate(name = NodeID) %>%
     mutate(length = as.numeric(length))
   
   # Create a graph based on this distance matrix and adjust directions
@@ -202,7 +203,7 @@ snap_to_river <- function(x, y, max_dist = 1000){
     }
     # Create output data frame
     out[[i]] <- x_i.snap
-    cat(paste0(i, " "))
+    #cat(paste0(i, " "))
   }
   # out_x should contain the same metadata of dams
   out_x <- do.call(rbind, out)
@@ -275,6 +276,7 @@ multiple_confluences <- function(shape){
   
   # Break shapefile at points
   river_to_points <- shape %>%
+    mutate(NodeID = 1:nrow(.)) %>%
     st_as_sf %>%
     st_cast("POINT") %>%
     mutate(id = 1:nrow(.))
@@ -286,8 +288,10 @@ multiple_confluences <- function(shape){
     unlist() %>%
     unique()
   
-  river_joins <- river_to_points %>% 
-    filter(id %in% joins_selection)
+  river_joins <- river_to_points %>%
+    dplyr::filter(id %in% joins_selection) %>%
+    dplyr::select(NodeID) %>% 
+    st_as_sf
   
   # Create buffer around shape_points
   river_joins_buffer <- river_joins %>%
@@ -297,7 +301,7 @@ multiple_confluences <- function(shape){
   intersections_mat <- st_intersects(river_joins_buffer, shape)
   
   # Add information to the joints shapefile
-  river_joins$n_confluences <- do.call(rbind, lapply(intersections_mat, FUN = length))
+  river_joins$n_confluences <-  as.vector(do.call(rbind, lapply(intersections_mat, FUN = length)) )
   river_joins$flag_confluences <- ifelse(river_joins$n_confluences <=3, FALSE, TRUE)
   
   return(river_joins)
@@ -355,6 +359,85 @@ gaps_detection <- function(shape){
 }
 
 
-
+#' Creates a river network shapefile with the component attribute that 
+#' can be useful for identifying disconnected chunks
+#'
+#' @param network_links a point shapefile containing the river joins and dams
+#' (must be of class sf)
+#' @param river_net_simplified a polyline shapefile containing the river
+#' network already sliced (must be of class sf).  Must contain an ID column named 'NodeID'.
+#' @return sf object that copies river_net_simplified with an additional 
+#' 'component' field that can be plotted to spot isolated components
+#' @export
+#'
+#' @examples
+#'
+check_components <- function(network_links, river_net_simplified) {
+  
+  # - use spatial join to get information about the links
+  # - create a distance matrics in long format
+  # - create temporaty network: it includes triangular cliques corresponding
+  # to the joints
+  # - loop over the triangles to remove the edges that are not good for having a
+  # nicely directed network
+  # - create a new undirected graph without loops
+  # - extract the graph components and join with original shapefile
+  
+  network_links_df <- st_is_within_distance(network_links, 
+                                            river_net_simplified,
+                                            dist = 0.01) %>%
+    lapply(.,
+           FUN = function(x){data.frame("from" = x[1], "to" = x[2], "to2" = x[3]) }) %>%
+    do.call(rbind,.) %>%
+    cbind(network_links %>% st_drop_geometry())
+  
+  # Get a full distance matrix
+  # - note: directions are messed up!
+  # - note: for the joints I am creating triangles (i.e. there are 3 nodes and 3 links):
+  # this is to be corrected afterwards when I decide the directionality
+  full_net_links_df <- rbind(
+    network_links_df %>%
+      filter(!is.na(to2)) %>%
+      dplyr::select(-to2) %>%
+      rename(from = from, to = to),
+    network_links_df %>%
+      filter(!is.na(to2)) %>%
+      dplyr::select(-to) %>%
+      rename(from = from, to = to2),
+    network_links_df %>%
+      filter(!is.na(to2)) %>%
+      dplyr::select(-from) %>%
+      rename(from = to, to = to2) ,
+    network_links_df %>%
+      filter(is.na(to2)) %>%
+      dplyr::select(-to2)
+  ) %>%
+    #dplyr::select(from, to, type, id_dam, pass_u, pass_d) %>%
+    mutate(id_links = 1:nrow(.))
+  
+  # Create vertices vector
+  vertices <- river_net_simplified %>% 
+    st_drop_geometry %>%
+    mutate(name = 1:nrow(.)) %>%
+    mutate(length = as.numeric(length))
+  
+  # Create a graph based on this distance matrix and adjust directions
+  # note: add vertex name so it's easier to identify them in the next steps
+  river_temp_2 <- igraph::graph_from_data_frame(
+    d = full_net_links_df,
+    v = vertices,
+    directed = FALSE) %>%
+    igraph::simplify(remove.loops = FALSE, remove.multiple = TRUE, edge.attr.comb="first")
+  
+  # Get the components of river_temp
+  river_net_simplified_comp <- river_net_simplified %>%
+    mutate(NodeID = 1:nrow(.)) %>%
+    dplyr::select(NodeID)
+  river_net_simplified_comp$component <- as.vector(components(river_temp_2)$membership)
+  
+  # Return output
+  return(river_net_simplified_comp)
+  
+}
 
 
