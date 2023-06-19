@@ -179,7 +179,7 @@ shape_river_simplified <- lwgeom::st_split(shape_river_simple, river_joins) %>%
   st_collection_extract(.,"LINESTRING") %>%
   data.frame(id = 1:length(.), geometry = .) %>%
   st_as_sf() %>%
-  mutate(length = st_length(.))
+  mutate(length = sf::st_length(.))
 ```
 
 Results can be checked with a plot.
@@ -270,15 +270,14 @@ network_links <- rbind(
 
 # Split river network
 river_net_simplified <- lwgeom::st_split(shape_river_simple, network_links) %>%
-  st_collection_extract(.,"LINESTRING") %>%
+  sf::st_collection_extract(.,"LINESTRING") %>%
   data.frame(NodeID = 1:length(.), geometry = .) %>%
-  st_as_sf() %>%
-  mutate(length = st_length(.)) %>%
+  st_as_sf() %>%   
+  mutate(length = sf::st_length(.)) %>%
   st_join(., shape_river_small, join = st_is_within_distance, dist = 0.01 ) %>% 
   group_by(NodeID) %>%
   slice(which.max(UPLAND_SKM)) %>% 
   ungroup()
-
 ```
 
 A plot can reveal if the process was successful.
@@ -338,6 +337,7 @@ river_net_simplified <- river_net_simplified %>%
 # To avoid issues in the network creation process, retain only the important columns
 river_net_simplified <- river_net_simplified %>% 
   dplyr::select(NodeID, length, alt, DIST_DN_KM, UPLAND_SKM)
+
 ```
 
 Plotting can show weird behaviors of the join operation.

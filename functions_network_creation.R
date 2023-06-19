@@ -441,3 +441,84 @@ check_components <- function(network_links, river_net_simplified) {
 }
 
 
+#' Creates a river network shapefile with the n_triangles field that 
+#' can be useful for identifying loops for manual cleaning of the network
+#'
+#' @param network_links a point shapefile containing the river joins and dams
+#' (must be of class sf)
+#' @param river_net_simplified a polyline shapefile containing the river
+#' network already sliced (must be of class sf).  Must contain an ID column named 'NodeID'.
+#' @return sf object that mirrors river_net_simplified with an additional 
+#' 'n_triangles' field that can be plotted to spot isolated components
+#' @export
+#'
+#' @examples
+#'
+loops_identification <- function(network_links, river_net_simplified) {
+  
+  # - use spatial join to get information about the links
+  # - create a distance matrics in long format
+  # - create temporaty network: it includes triangular cliques corresponding
+  # to the joints
+  # - loop over the triangles to remove the edges that are not good for having a
+  # nicely directed network
+  # - create a new undirected graph without loops
+  # - extract the graph components and join with original shapefile
+  
+  network_links_df <- st_is_within_distance(network_links, river_net_simplified, dist = 0.1) %>%
+    lapply(.,
+           FUN = function(x){data.frame("from" = x[1], "to" = x[2], "to2" = x[3]) }) %>%
+    do.call(rbind,.) %>%
+    cbind(network_links %>% st_drop_geometry())
+  
+  # Get a full distance matrix
+  # - note: directions are messed up!
+  # - note: for the joints I am creating triangles (i.e. there are 3 nodes and 3 links):
+  # this is to be corrected afterwards when I decide the directionality
+  full_net_links_df <- rbind(
+    network_links_df %>%
+      filter(!is.na(to2)) %>%
+      dplyr::select(-to2) %>%
+      rename(from = from, to = to),
+    network_links_df %>%
+      filter(!is.na(to2)) %>%
+      dplyr::select(-to) %>%
+      rename(from = from, to = to2),
+    network_links_df %>%
+      filter(!is.na(to2)) %>%
+      dplyr::select(-from) %>%
+      rename(from = to, to = to2) ,
+    network_links_df %>%
+      filter(is.na(to2)) %>%
+      dplyr::select(-to2)
+  ) %>%
+    #dplyr::select(from, to, type, id_dam, pass_u, pass_d) %>%
+    mutate(id_links = 1:nrow(.))
+  
+  # Create vertices vector
+  vertices <- river_net_simplified %>% 
+    st_drop_geometry %>%
+    mutate(name = 1:nrow(.)) %>%
+    mutate(length = as.numeric(length))
+  
+  # Create a graph based on this distance matrix and adjust directions
+  # note: add vertex name so it's easier to identify them in the next steps
+  river_temp_2 <- igraph::graph_from_data_frame(
+    d = full_net_links_df,
+    v = vertices,
+    directed = FALSE) # %>% igraph::simplify(remove.loops = FALSE, remove.multiple = TRUE, edge.attr.comb="first")
+  
+  # Get the components of river_temp
+  river_net_simplified_comp <- river_net_simplified %>%
+    mutate(NodeID = 1:nrow(.)) %>%
+    dplyr::select(NodeID)
+  river_net_simplified_comp$n_triangles <- count_triangles(river_temp_2)
+  
+  # Return output
+  return(river_net_simplified_comp)
+  
+}
+
+
+
+
